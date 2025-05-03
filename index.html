@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimate Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .input-group { margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .total { font-weight: bold; margin-top: 20px; }
+        .save-btn { margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Estimate Generator</h1>
+        
+        <div class="input-group">
+            <label for="customer">Customer:</label>
+            <input type="text" id="customer" list="customers">
+            <datalist id="customers"></datalist>
+            <button class="save-btn" onclick="saveCustomer()">Save Customer</button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="material" placeholder="Material">
+            <input type="text" id="service" placeholder="Service">
+            <input type="number" id="price" placeholder="Price">
+            <input type="date" id="date" value="<?php echo date('Y-m-d'); ?>">
+            <button onclick="addItem()">Add Item</button>
+        </div>
+
+        <table id="itemsTable">
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Service</th>
+                    <th>Price</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <div class="total">
+            Total Price: $<span id="totalPrice">0.00</span>
+        </div>
+    </div>
+
+    <script>
+        // Load saved customers
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
+        updateCustomerList();
+
+        function saveCustomer() {
+            const customerInput = document.getElementById('customer');
+            const customerName = customerInput.value.trim();
+            
+            if (customerName && !customers.includes(customerName)) {
+                customers.push(customerName);
+                localStorage.setItem('customers', JSON.stringify(customers));
+                updateCustomerList();
+                customerInput.value = '';
+            }
+        }
+
+        function updateCustomerList() {
+            const datalist = document.getElementById('customers');
+            datalist.innerHTML = customers.map(customer => 
+                `<option value="${customer}">${customer}</option>`
+            ).join('');
+        }
+
+        function addItem() {
+            const material = document.getElementById('material').value;
+            const service = document.getElementById('service').value;
+            const price = document.getElementById('price').value;
+            const date = document.getElementById('date').value;
+
+            if (!material || !price) {
+                alert('Please fill in at least Material and Price fields');
+                return;
+            }
+
+            const tableBody = document.querySelector('#itemsTable tbody');
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${material}</td>
+                <td>${service}</td>
+                <td>$${parseFloat(price).toFixed(2)}</td>
+                <td>${date}</td>
+                <td><button onclick="removeItem(this)">Remove</button></td>
+            `;
+
+            tableBody.appendChild(row);
+            updateTotal();
+            clearInputs();
+        }
+
+        function removeItem(button) {
+            button.closest('tr').remove();
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const prices = document.querySelectorAll('#itemsTable tbody tr td:nth-child(3)');
+            let total = 0;
+            prices.forEach(price => {
+                total += parseFloat(price.textContent.replace('$', ''));
+            });
+            document.getElementById('totalPrice').textContent = total.toFixed(2);
+        }
+
+        function clearInputs() {
+            document.getElementById('material').value = '';
+            document.getElementById('service').value = '';
+            document.getElementById('price').value = '';
+        }
+
+        // Set default date to today
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>
