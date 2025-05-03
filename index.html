@@ -13,6 +13,7 @@
         th { background-color: #f2f2f2; }
         .total { font-weight: bold; margin-top: 20px; }
         .save-btn { margin-left: 10px; }
+        select { padding: 5px; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -27,18 +28,21 @@
         </div>
 
         <div class="input-group">
-            <input type="text" id="material" placeholder="Material">
-            <input type="text" id="service" placeholder="Service">
+            <select id="type">
+                <option value="Material">Material</option>
+                <option value="Labor">Labor</option>
+            </select>
+            <input type="text" id="description" placeholder="Description">
             <input type="number" id="price" placeholder="Price">
-            <input type="date" id="date" value="<?php echo date('Y-m-d'); ?>">
+            <input type="date" id="date">
             <button onclick="addItem()">Add Item</button>
         </div>
 
         <table id="itemsTable">
             <thead>
                 <tr>
-                    <th>Material</th>
-                    <th>Service</th>
+                    <th>Type</th>
+                    <th>Description</th>
                     <th>Price</th>
                     <th>Date</th>
                     <th>Action</th>
@@ -78,13 +82,13 @@
         }
 
         function addItem() {
-            const material = document.getElementById('material').value;
-            const service = document.getElementById('service').value;
+            const type = document.getElementById('type').value;
+            const description = document.getElementById('description').value;
             const price = document.getElementById('price').value;
             const date = document.getElementById('date').value;
 
-            if (!material || !price) {
-                alert('Please fill in at least Material and Price fields');
+            if (!description || !price) {
+                alert('Please fill in Description and Price fields');
                 return;
             }
 
@@ -92,8 +96,8 @@
             const row = document.createElement('tr');
             
             row.innerHTML = `
-                <td>${material}</td>
-                <td>${service}</td>
+                <td>${type}</td>
+                <td>${description}</td>
                 <td>$${parseFloat(price).toFixed(2)}</td>
                 <td>${date}</td>
                 <td><button onclick="removeItem(this)">Remove</button></td>
@@ -119,8 +123,7 @@
         }
 
         function clearInputs() {
-            document.getElementById('material').value = '';
-            document.getElementById('service').value = '';
+            document.getElementById('description').value = '';
             document.getElementById('price').value = '';
         }
 
