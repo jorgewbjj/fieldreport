@@ -2,122 +2,188 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gerador de Orçamento</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 15px;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            padding: 15px 0;
         }
-        
+
+        h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+        }
+
         .form-group {
             margin-bottom: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        
+
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #444;
+            font-size: 0.95rem;
         }
-        
+
         input, textarea {
             width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 5px;
+            background: #fff;
         }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
+
+        .itens-container {
             margin: 20px 0;
         }
-        
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+
+        .item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        
+
+        .input-group {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: 1fr 1fr;
+            margin-bottom: 10px;
+        }
+
         .total {
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        button:hover {
-            background-color: #0056b3;
-        }
-        
-        .validade {
-            margin-top: 30px;
-            font-style: italic;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 25px 0;
             text-align: center;
+            color: #2c3e50;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: filter 0.2s;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            filter: brightness(0.9);
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            padding: 8px 12px;
+            margin-top: 10px;
+        }
+
+        .validade {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 25px 0;
+            font-size: 0.9rem;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 25px;
+            }
+            
+            .input-group {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            button {
+                width: auto;
+            }
+            
+            .remove-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Orçamento</h1>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1>Orçamento</h1>
+        </div>
 
-    <div class="form-group">
-        <label>Cliente:</label>
-        <input type="text" id="cliente" required>
-    </div>
+        <div class="form-group">
+            <label>Cliente:</label>
+            <input type="text" id="cliente" placeholder="Nome do cliente" required>
+        </div>
 
-    <div class="form-group">
-        <label>Data:</label>
-        <input type="date" id="data" required>
-    </div>
+        <div class="form-group">
+            <label>Data:</label>
+            <input type="date" id="data" required>
+        </div>
 
-    <h3>Materiais/Serviços</h3>
-    <table id="itens">
-        <thead>
-            <tr>
-                <th>Descrição</th>
-                <th width="120">Preço Unitário</th>
-                <th width="100">Quantidade</th>
-                <th width="120">Subtotal</th>
-                <th width="50"></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><input type="text" class="material"></td>
-                <td><input type="number" class="preco" step="0.01"></td>
-                <td><input type="number" class="quantidade" value="1"></td>
-                <td class="subtotal">R$ 0.00</td>
-                <td><button type="button" onclick="removerLinha(this)">×</button></td>
-            </tr>
-        </tbody>
-    </table>
+        <div class="itens-container" id="itens">
+            <div class="item">
+                <div class="input-group">
+                    <div>
+                        <label>Descrição</label>
+                        <input type="text" class="material" placeholder="Material/serviço">
+                    </div>
+                    <div>
+                        <label>Preço</label>
+                        <input type="number" class="preco" step="0.01" placeholder="R$ 0,00">
+                    </div>
+                    <div>
+                        <label>Quantidade</label>
+                        <input type="number" class="quantidade" value="1">
+                    </div>
+                    <div>
+                        <label>Subtotal</label>
+                        <input type="text" class="subtotal" value="R$ 0,00" readonly>
+                    </div>
+                </div>
+                <button type="button" class="remove-btn" onclick="removerItem(this)">Remover</button>
+            </div>
+        </div>
 
-    <button type="button" onclick="adicionarLinha()">Adicionar Item</button>
-    
-    <div class="total">Total: R$ <span id="total">0.00</span></div>
-    
-    <div class="validade">Orçamento válido por 30 dias</div>
+        <button type="button" onclick="adicionarItem()">Adicionar Item</button>
+        
+        <div class="total">Total: R$ <span id="total">0,00</span></div>
+        
+        <div class="validade">Orçamento válido por 30 dias</div>
 
-    <div style="text-align: center; margin-top: 30px;">
-        <button onclick="gerarPDF()">Gerar Orçamento PDF</button>
+        <button onclick="gerarPDF()">Gerar PDF</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -127,87 +193,116 @@
 
         function atualizarTotal() {
             let total = 0;
-            document.querySelectorAll('#itens tbody tr').forEach(linha => {
-                const preco = parseFloat(linha.querySelector('.preco').value) || 0;
-                const quantidade = parseFloat(linha.querySelector('.quantidade').value) || 0;
+            document.querySelectorAll('.item').forEach(item => {
+                const preco = parseFloat(item.querySelector('.preco').value) || 0;
+                const quantidade = parseFloat(item.querySelector('.quantidade').value) || 0;
                 const subtotal = preco * quantidade;
-                linha.querySelector('.subtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+                item.querySelector('.subtotal').value = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
                 total += subtotal;
             });
-            document.getElementById('total').textContent = total.toFixed(2);
+            document.getElementById('total').textContent = total.toFixed(2).replace('.', ',');
         }
 
-        function adicionarLinha() {
-            const novaLinha = document.createElement('tr');
-            novaLinha.innerHTML = `
-                <td><input type="text" class="material"></td>
-                <td><input type="number" class="preco" step="0.01"></td>
-                <td><input type="number" class="quantidade" value="1"></td>
-                <td class="subtotal">R$ 0.00</td>
-                <td><button type="button" onclick="removerLinha(this)">×</button></td>
+        function adicionarItem() {
+            const novoItem = document.createElement('div');
+            novoItem.className = 'item';
+            novoItem.innerHTML = `
+                <div class="input-group">
+                    <div>
+                        <label>Descrição</label>
+                        <input type="text" class="material" placeholder="Material/serviço">
+                    </div>
+                    <div>
+                        <label>Preço</label>
+                        <input type="number" class="preco" step="0.01" placeholder="R$ 0,00">
+                    </div>
+                    <div>
+                        <label>Quantidade</label>
+                        <input type="number" class="quantidade" value="1">
+                    </div>
+                    <div>
+                        <label>Subtotal</label>
+                        <input type="text" class="subtotal" value="R$ 0,00" readonly>
+                    </div>
+                </div>
+                <button type="button" class="remove-btn" onclick="removerItem(this)">Remover</button>
             `;
-            document.querySelector('#itens tbody').appendChild(novaLinha);
+            document.getElementById('itens').appendChild(novoItem);
             
-            // Adicionar event listeners aos novos inputs
-            novaLinha.querySelectorAll('input').forEach(input => {
+            novoItem.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', atualizarTotal);
             });
         }
 
-        function removerLinha(botao) {
-            if(document.querySelectorAll('#itens tbody tr').length > 1) {
-                botao.closest('tr').remove();
+        function removerItem(botao) {
+            if(document.querySelectorAll('.item').length > 1) {
+                botao.closest('.item').remove();
                 atualizarTotal();
             }
         }
 
-        // Adicionar event listeners aos inputs existentes
-        document.querySelectorAll('#itens input').forEach(input => {
+        document.querySelectorAll('input').forEach(input => {
             input.addEventListener('input', atualizarTotal);
         });
 
         function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
+            const margin = 15;
+            let y = 20;
+
             // Cabeçalho
             doc.setFontSize(18);
-            doc.text("Orçamento", 105, 20, { align: 'center' });
-            
+            doc.text("Orçamento", 105, y, { align: 'center' });
+            y += 15;
+
             // Informações do cliente
             doc.setFontSize(12);
-            doc.text(`Cliente: ${document.getElementById('cliente').value}`, 20, 30);
-            doc.text(`Data: ${document.getElementById('data').value}`, 20, 38);
-            
+            doc.text(`Cliente: ${document.getElementById('cliente').value}`, margin, y);
+            y += 8;
+            doc.text(`Data: ${document.getElementById('data').value}`, margin, y);
+            y += 15;
+
             // Itens
-            let y = 50;
             doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
-            doc.text("Descrição", 20, y);
-            doc.text("Preço Unitário", 70, y);
-            doc.text("Quantidade", 120, y);
-            doc.text("Subtotal", 150, y);
-            
+            doc.text("Descrição", margin, y);
+            doc.text("Preço", margin + 70, y);
+            doc.text("Qtd.", margin + 110, y);
+            doc.text("Subtotal", margin + 140, y);
+            y += 8;
+
             doc.setFont(undefined, 'normal');
-            y += 10;
+            let count = 1;
             
-            document.querySelectorAll('#itens tbody tr').forEach(linha => {
-                const cols = linha.querySelectorAll('td');
-                doc.text(cols[0].querySelector('input').value, 20, y);
-                doc.text(`R$ ${parseFloat(cols[1].querySelector('input').value).toFixed(2)}`, 70, y);
-                doc.text(cols[2].querySelector('input').value, 120, y);
-                doc.text(cols[3].textContent, 150, y);
+            document.querySelectorAll('.item').forEach(item => {
+                if(y > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+
+                const material = item.querySelector('.material').value;
+                const preco = item.querySelector('.preco').value;
+                const quantidade = item.querySelector('.quantidade').value;
+                const subtotal = item.querySelector('.subtotal').value;
+
+                doc.text(`${count}. ${material}`, margin, y);
+                doc.text(`R$ ${parseFloat(preco).toFixed(2)}`, margin + 70, y);
+                doc.text(quantidade, margin + 110, y);
+                doc.text(subtotal, margin + 140, y);
+                
                 y += 10;
+                count++;
             });
-            
+
             // Total
             doc.setFont(undefined, 'bold');
-            doc.text(`Total: R$ ${document.getElementById('total').textContent}`, 20, y + 10);
+            doc.text(`Total: R$ ${document.getElementById('total').textContent}`, margin, y + 10);
             
             // Validade
             doc.setFont(undefined, 'italic');
             doc.text("Orçamento válido por 30 dias", 105, y + 20, { align: 'center' });
-            
+
             doc.save(`Orcamento_${document.getElementById('cliente').value}.pdf`);
         }
     </script>
