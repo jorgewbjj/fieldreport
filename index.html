@@ -23,6 +23,17 @@
             margin: 0 auto;
         }
 
+        .logo-container {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
         .company-info {
             text-align: center;
             margin-bottom: 20px;
@@ -150,6 +161,16 @@
             min-height: 100px;
         }
 
+        @media (max-width: 480px) {
+            .logo {
+                max-width: 150px;
+            }
+            
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (min-width: 768px) {
             body {
                 padding: 25px;
@@ -171,6 +192,10 @@
 </head>
 <body>
     <div class="container">
+        <div class="logo-container">
+            <img src="logo.png" class="logo" alt="Logo Diff Embalagens">
+        </div>
+
         <div class="company-info">
             <h2>DIFF EMBALAGENS ESPECIAIS</h2>
             <p>R. Pomerode, 1371 - Bairro Salto do Norte</p>
@@ -293,11 +318,30 @@ Contato comercial: pedro@diffembalagens.com</textarea>
             input.addEventListener('input', atualizarTotal);
         });
 
-        function gerarPDF() {
+        async function loadLogo() {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Logo não encontrada'));
+                img.src = 'logo.png';
+            });
+        }
+
+        async function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const margin = 15;
             let y = 20;
+
+            try {
+                const logo = await loadLogo();
+                const logoWidth = 60;
+                const logoHeight = (logo.naturalHeight / logo.naturalWidth) * logoWidth;
+                doc.addImage(logo, 'PNG', (doc.internal.pageSize.getWidth() - logoWidth)/2, y, logoWidth, logoHeight);
+                y += logoHeight + 15;
+            } catch(error) {
+                console.warn('Logo não carregada:', error.message);
+            }
 
             doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
