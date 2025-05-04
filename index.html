@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gerador de Orçamento</title>
+    <title>Diff Embalagens - Orçamento</title>
     <style>
         * {
             box-sizing: border-box;
@@ -23,10 +23,30 @@
             margin: 0 auto;
         }
 
+        .company-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .company-info h2 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .company-info p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
         .header {
             text-align: center;
             margin-bottom: 25px;
-            padding: 15px 0;
         }
 
         h1 {
@@ -118,6 +138,18 @@
             font-size: 0.9rem;
         }
 
+        .observacoes {
+            margin: 20px 0;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .observacoes textarea {
+            background: white;
+            min-height: 100px;
+        }
+
         @media (min-width: 768px) {
             body {
                 padding: 25px;
@@ -139,6 +171,13 @@
 </head>
 <body>
     <div class="container">
+        <div class="company-info">
+            <h2>DIFF EMBALAGENS ESPECIAIS</h2>
+            <p>R. Pomerode, 1371 - Bairro Salto do Norte</p>
+            <p>89065-300 Blumenau - SC</p>
+            <p>CNPJ: 18.678.030/0001-17</p>
+        </div>
+
         <div class="header">
             <h1>Orçamento</h1>
         </div>
@@ -180,7 +219,17 @@
         <button type="button" onclick="adicionarItem()">Adicionar Item</button>
         
         <div class="total">Total: R$ <span id="total">0,00</span></div>
-        
+
+        <div class="observacoes form-group">
+            <label>Observações:</label>
+            <textarea id="obs">Para agilizar impressão, pedimos que arquivos sejam enviados em pdf vetorizado.
+
+Prazo de entrega: 6 dias úteis
+Prazo para pagamento: 21 dias
+
+Contato comercial: pedro@diffembalagens.com</textarea>
+        </div>
+
         <div class="validade">Orçamento válido por 30 dias</div>
 
         <button onclick="gerarPDF()">Gerar PDF</button>
@@ -188,7 +237,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        // Configurar data atual
         document.getElementById('data').value = new Date().toISOString().split('T')[0];
 
         function atualizarTotal() {
@@ -251,20 +299,29 @@
             const margin = 15;
             let y = 20;
 
-            // Cabeçalho
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text("DIFF EMBALAGENS ESPECIAIS", 105, y, { align: 'center' });
+            y += 5;
+            doc.setFont(undefined, 'normal');
+            doc.text("R. Pomerode, 1371 - Bairro Salto do Norte", 105, y, { align: 'center' });
+            y += 5;
+            doc.text("89065-300 Blumenau - SC", 105, y, { align: 'center' });
+            y += 5;
+            doc.text("CNPJ: 18.678.030/0001-17", 105, y, { align: 'center' });
+            y += 15;
+
             doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
             doc.text("Orçamento", 105, y, { align: 'center' });
             y += 15;
 
-            // Informações do cliente
             doc.setFontSize(12);
             doc.text(`Cliente: ${document.getElementById('cliente').value}`, margin, y);
             y += 8;
             doc.text(`Data: ${document.getElementById('data').value}`, margin, y);
             y += 15;
 
-            // Itens
-            doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
             doc.text("Descrição", margin, y);
             doc.text("Preço", margin + 70, y);
@@ -295,13 +352,29 @@
                 count++;
             });
 
-            // Total
             doc.setFont(undefined, 'bold');
             doc.text(`Total: R$ ${document.getElementById('total').textContent}`, margin, y + 10);
-            
-            // Validade
+            y += 15;
+
+            const observacoes = document.getElementById('obs').value;
+            if(observacoes) {
+                doc.setFont(undefined, 'bold');
+                doc.text("Observações:", margin, y);
+                y += 8;
+                doc.setFont(undefined, 'normal');
+                const splitObs = doc.splitTextToSize(observacoes, 180);
+                splitObs.forEach(line => {
+                    if(y > 280) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.text(line, margin, y);
+                    y += 8;
+                });
+            }
+
             doc.setFont(undefined, 'italic');
-            doc.text("Orçamento válido por 30 dias", 105, y + 20, { align: 'center' });
+            doc.text("Orçamento válido por 30 dias", 105, y + 10, { align: 'center' });
 
             doc.save(`Orcamento_${document.getElementById('cliente').value}.pdf`);
         }
