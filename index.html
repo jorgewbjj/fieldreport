@@ -1,191 +1,215 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Estimate Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Orçamento</title>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; margin: 10px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .input-group { margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .total { font-weight: bold; margin-top: 20px; font-size: 18px; }
-        select, input, button { font-size: 16px; padding: 10px; margin: 5px 0; width: 100%; }
-        button { background-color: #4CAF50; color: white; border: none; border-radius: 4px; }
-        .save-btn { background-color: #2196F3; }
-        .quantity-group { display: none; }
-        .mobile-flex { display: flex; gap: 10px; }
-        .mobile-flex > * { flex: 1; }
-        .table-wrapper { overflow-x: auto; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
         
-        @media (max-width: 600px) {
-            .mobile-flex { flex-direction: column; }
-            th, td { padding: 6px; font-size: 14px; }
-            h1 { font-size: 24px; margin: 15px 0; }
-            .input-group { margin-bottom: 10px; }
-            input, select, button { padding: 8px; }
-            .total { font-size: 16px; }
-            .hide-mobile { display: none; }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .validade {
+            margin-top: 30px;
+            font-style: italic;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Estimate Generator</h1>
-        
-        <div class="input-group mobile-flex">
-            <div style="flex: 2;">
-                <input type="text" id="customer" list="customers" placeholder="Customer" style="margin-bottom: 5px;">
-                <datalist id="customers"></datalist>
-                <button class="save-btn" onclick="saveCustomer()">Save Customer</button>
-            </div>
-            <div>
-                <input type="date" id="estimateDate" style="margin-top: 23px;">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <div class="mobile-flex">
-                <select id="type" onchange="toggleQuantityField()">
-                    <option value="Material">Material</option>
-                    <option value="Labor">Labor</option>
-                </select>
-                <input type="text" id="description" placeholder="Description">
-            </div>
-            
-            <div class="quantity-group" id="quantityGroup">
-                <div class="mobile-flex">
-                    <input type="number" id="unitPrice" placeholder="Unit Price" step="0.01">
-                    <input type="number" id="quantity" placeholder="Quantity">
-                </div>
-            </div>
-            <input type="number" id="laborPrice" placeholder="Labor Price" step="0.01">
-            <button onclick="addItem()">Add Item</button>
-        </div>
-
-        <div class="table-wrapper">
-            <table id="itemsTable">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th class="hide-mobile">Description</th>
-                        <th>Details</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="total">
-            Total: $<span id="totalPrice">0.00</span>
-        </div>
+    <div class="header">
+        <h1>Orçamento</h1>
     </div>
 
+    <div class="form-group">
+        <label>Cliente:</label>
+        <input type="text" id="cliente" required>
+    </div>
+
+    <div class="form-group">
+        <label>Data:</label>
+        <input type="date" id="data" required>
+    </div>
+
+    <h3>Materiais/Serviços</h3>
+    <table id="itens">
+        <thead>
+            <tr>
+                <th>Descrição</th>
+                <th width="120">Preço Unitário</th>
+                <th width="100">Quantidade</th>
+                <th width="120">Subtotal</th>
+                <th width="50"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" class="material"></td>
+                <td><input type="number" class="preco" step="0.01"></td>
+                <td><input type="number" class="quantidade" value="1"></td>
+                <td class="subtotal">R$ 0.00</td>
+                <td><button type="button" onclick="removerLinha(this)">×</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button type="button" onclick="adicionarLinha()">Adicionar Item</button>
+    
+    <div class="total">Total: R$ <span id="total">0.00</span></div>
+    
+    <div class="validade">Orçamento válido por 30 dias</div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <button onclick="gerarPDF()">Gerar Orçamento PDF</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        // Load saved customers
-        let customers = JSON.parse(localStorage.getItem('customers')) || [];
-        updateCustomerList();
-        
-        // Set default date to today
-        document.getElementById('estimateDate').value = new Date().toISOString().split('T')[0];
+        // Configurar data atual
+        document.getElementById('data').value = new Date().toISOString().split('T')[0];
 
-        function toggleQuantityField() {
-            const type = document.getElementById('type').value;
-            const quantityGroup = document.getElementById('quantityGroup');
-            const laborPrice = document.getElementById('laborPrice');
-            
-            quantityGroup.style.display = type === 'Material' ? 'block' : 'none';
-            laborPrice.style.display = type === 'Labor' ? 'block' : 'none';
-        }
-
-        function saveCustomer() {
-            const customerInput = document.getElementById('customer');
-            const customerName = customerInput.value.trim();
-            
-            if (customerName && !customers.includes(customerName)) {
-                customers.push(customerName);
-                localStorage.setItem('customers', JSON.stringify(customers));
-                updateCustomerList();
-                customerInput.value = '';
-            }
-        }
-
-        function updateCustomerList() {
-            const datalist = document.getElementById('customers');
-            datalist.innerHTML = customers.map(customer => 
-                `<option value="${customer}">${customer}</option>`
-            ).join('');
-        }
-
-        function addItem() {
-            const type = document.getElementById('type').value;
-            const description = document.getElementById('description').value;
-            let price = 0;
-            let details = '';
-
-            if (type === 'Material') {
-                const unitPrice = parseFloat(document.getElementById('unitPrice').value);
-                const quantity = parseFloat(document.getElementById('quantity').value);
-                if (!description || !unitPrice || !quantity) {
-                    alert('Please fill all Material fields');
-                    return;
-                }
-                price = unitPrice * quantity;
-                details = `${quantity} × $${unitPrice.toFixed(2)}`;
-            } else {
-                price = parseFloat(document.getElementById('laborPrice').value);
-                if (!description || !price) {
-                    alert('Please fill all Labor fields');
-                    return;
-                }
-                details = 'Labor cost';
-            }
-
-            const tableBody = document.querySelector('#itemsTable tbody');
-            const row = document.createElement('tr');
-            
-            row.innerHTML = `
-                <td>${type}</td>
-                <td class="hide-mobile">${description}</td>
-                <td>${details}</td>
-                <td>$${price.toFixed(2)}</td>
-                <td><button style="padding: 5px;" onclick="removeItem(this)">🗑️</button></td>
-            `;
-
-            tableBody.appendChild(row);
-            updateTotal();
-            clearInputs();
-        }
-
-        function removeItem(button) {
-            button.closest('tr').remove();
-            updateTotal();
-        }
-
-        function updateTotal() {
-            const prices = document.querySelectorAll('#itemsTable tbody tr td:nth-child(4)');
+        function atualizarTotal() {
             let total = 0;
-            prices.forEach(price => {
-                total += parseFloat(price.textContent.replace('$', ''));
+            document.querySelectorAll('#itens tbody tr').forEach(linha => {
+                const preco = parseFloat(linha.querySelector('.preco').value) || 0;
+                const quantidade = parseFloat(linha.querySelector('.quantidade').value) || 0;
+                const subtotal = preco * quantidade;
+                linha.querySelector('.subtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+                total += subtotal;
             });
-            document.getElementById('totalPrice').textContent = total.toFixed(2);
+            document.getElementById('total').textContent = total.toFixed(2);
         }
 
-        function clearInputs() {
-            document.getElementById('description').value = '';
-            document.getElementById('unitPrice').value = '';
-            document.getElementById('quantity').value = '';
-            document.getElementById('laborPrice').value = '';
+        function adicionarLinha() {
+            const novaLinha = document.createElement('tr');
+            novaLinha.innerHTML = `
+                <td><input type="text" class="material"></td>
+                <td><input type="number" class="preco" step="0.01"></td>
+                <td><input type="number" class="quantidade" value="1"></td>
+                <td class="subtotal">R$ 0.00</td>
+                <td><button type="button" onclick="removerLinha(this)">×</button></td>
+            `;
+            document.querySelector('#itens tbody').appendChild(novaLinha);
+            
+            // Adicionar event listeners aos novos inputs
+            novaLinha.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', atualizarTotal);
+            });
         }
 
-        // Initial setup
-        toggleQuantityField();
+        function removerLinha(botao) {
+            if(document.querySelectorAll('#itens tbody tr').length > 1) {
+                botao.closest('tr').remove();
+                atualizarTotal();
+            }
+        }
+
+        // Adicionar event listeners aos inputs existentes
+        document.querySelectorAll('#itens input').forEach(input => {
+            input.addEventListener('input', atualizarTotal);
+        });
+
+        function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Cabeçalho
+            doc.setFontSize(18);
+            doc.text("Orçamento", 105, 20, { align: 'center' });
+            
+            // Informações do cliente
+            doc.setFontSize(12);
+            doc.text(`Cliente: ${document.getElementById('cliente').value}`, 20, 30);
+            doc.text(`Data: ${document.getElementById('data').value}`, 20, 38);
+            
+            // Itens
+            let y = 50;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text("Descrição", 20, y);
+            doc.text("Preço Unitário", 70, y);
+            doc.text("Quantidade", 120, y);
+            doc.text("Subtotal", 150, y);
+            
+            doc.setFont(undefined, 'normal');
+            y += 10;
+            
+            document.querySelectorAll('#itens tbody tr').forEach(linha => {
+                const cols = linha.querySelectorAll('td');
+                doc.text(cols[0].querySelector('input').value, 20, y);
+                doc.text(`R$ ${parseFloat(cols[1].querySelector('input').value).toFixed(2)}`, 70, y);
+                doc.text(cols[2].querySelector('input').value, 120, y);
+                doc.text(cols[3].textContent, 150, y);
+                y += 10;
+            });
+            
+            // Total
+            doc.setFont(undefined, 'bold');
+            doc.text(`Total: R$ ${document.getElementById('total').textContent}`, 20, y + 10);
+            
+            // Validade
+            doc.setFont(undefined, 'italic');
+            doc.text("Orçamento válido por 30 dias", 105, y + 20, { align: 'center' });
+            
+            doc.save(`Orcamento_${document.getElementById('cliente').value}.pdf`);
+        }
     </script>
 </body>
 </html>
