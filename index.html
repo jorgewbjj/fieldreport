@@ -10,7 +10,7 @@
     body { font-family: Arial, sans-serif; margin: 0; background: #f4f6fb; }
     .container { max-width: 700px; margin: 40px auto; padding: 24px; background: #fff; border-radius: 16px; box-shadow: 0 3px 24px #0001; }
     h1 { margin-top: 0; }
-    #map { height: 360px; border-radius: 12px; margin-bottom: 16px; }
+    #map { height: 200px; border-radius: 12px; margin-bottom: 16px; }
     .issue-list { margin-top: 24px; }
     .issue-card { background: #f6faff; margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; border: 1px solid #eef1f6; }
     .issue-card strong { display: block; }
@@ -19,11 +19,12 @@
     input, textarea, button { padding: 6px 10px; margin-top: 6px; font-size: 15px; border-radius: 7px; border: 1px solid #d7dae3; }
     button { background: #3874fa; color: #fff; border: none; font-weight: 600; cursor: pointer; }
     button:hover { background: #1d53c6; }
-    .img-preview { max-width: 120px; max-height: 90px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; }
+    .img-preview { max-width: 220px; max-height: 160px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; }
     .row { display: flex; gap: 10px; }
     @media (max-width: 700px) {
       .container { margin: 0; border-radius: 0; box-shadow: none; }
-      #map { height: 240px; }
+      #map { height: 120px; }
+      .img-preview { max-width: 90vw; }
     }
   </style>
 </head>
@@ -68,7 +69,10 @@
   let issues = [];
   let latestImage = null;
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  // Esri Satellite Layer
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri'
+  }).addTo(map);
 
   // Center map to user's location
   if ("geolocation" in navigator) {
@@ -169,7 +173,7 @@
       return;
     }
 
-    // 1. Capture map as image
+    // 1. Capture map as image (smaller height)
     const mapNode = document.getElementById('map');
     const mapCanvas = await html2canvas(mapNode, { useCORS: true });
     const mapImgData = mapCanvas.toDataURL('image/png');
@@ -189,10 +193,10 @@
     // Map
     pdf.setFontSize(12);
     pdf.text("Map Overview:", 15, 28);
-    const mapW = 180, mapH = 70;
+    const mapW = 140, mapH = 45; // Smaller map
     pdf.addImage(mapImgData, 'PNG', 15, 30, mapW, mapH);
 
-    let y = 105;
+    let y = 80;
     pdf.setFontSize(14);
     pdf.text("Reported Issues:", 15, y);
     y += 5;
@@ -216,10 +220,10 @@
       y += 6;
 
       if (issue.image) {
-        // Add image, scaled to fit
+        // Add image, larger now
         let imgProps = pdf.getImageProperties(issue.image);
-        let imgW = 50, imgH = (imgProps.height / imgProps.width) * imgW;
-        if (imgH > 35) { imgH = 35; imgW = (imgProps.width / imgProps.height) * imgH; }
+        let imgW = 90, imgH = (imgProps.height / imgProps.width) * imgW;
+        if (imgH > 60) { imgH = 60; imgW = (imgProps.width / imgProps.height) * imgH; }
         pdf.addImage(issue.image, 'JPEG', 18, y, imgW, imgH);
         y += imgH + 4;
       }
