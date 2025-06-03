@@ -26,6 +26,19 @@
       #map { height: 120px; }
       .img-preview { max-width: 90vw; }
     }
+    .marker-number {
+      background: #3874fa;
+      color: #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      line-height: 30px;
+      font-size: 16px;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px #0004;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -54,7 +67,6 @@
 
   <div class="issue-list" id="issueList">
     <h2>Reported Issues</h2>
-    <!-- Issues will be inserted here -->
   </div>
   <button onclick="generatePDF()" style="margin-top:20px;">Download PDF Report</button>
 </div>
@@ -69,36 +81,45 @@
   let markers = [];
   let issues = [];
   let latestImage = null;
+  let lastLat = 0, lastLng = 0;
 
   // Esri Satellite Layer
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri'
   }).addTo(map);
 
-  // Geolocate and zoom close
+  // Numbered marker icon generator
+  function createNumberedDivIcon(number) {
+    return L.divIcon({
+      className: 'marker-number',
+      html: number,
+      iconSize: [30, 30],
+      iconAnchor: [15, 30]
+    });
+  }
+
+  // Geolocate and zoom very close
   function setMapToUser() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(function(pos) {
-        map.setView([pos.coords.latitude, pos.coords.longitude], 19); // building-level
+        lastLat = pos.coords.latitude;
+        lastLng = pos.coords.longitude;
+        map.setView([lastLat, lastLng], 21); // Maximum supported
       });
     }
   }
   setMapToUser();
 
-  // EXIF orientation fix
+  // EXIF orientation fix + preview
   function resetPreview() {
     document.getElementById('imgPreview').src = '';
     document.getElementById('imgPreview').style.display = 'none';
     latestImage = null;
   }
 
-  document.getElementById('picture').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) { resetPreview(); return; }
-
+  function getOrientationFixedDataURL(file, callback) {
     const reader = new FileReader();
     reader.onload = function(ev) {
-      // Read EXIF orientation
       EXIF.getData(file, function() {
         let orientation = EXIF.getTag(this, "Orientation") || 1;
         let img = new window.Image();
@@ -106,31 +127,36 @@
           let canvas = document.createElement('canvas');
           let ctx = canvas.getContext('2d');
           let w = img.width, h = img.height;
-          // set proper canvas dimensions before transform
           if (orientation > 4) { canvas.width = h; canvas.height = w; }
           else { canvas.width = w; canvas.height = h; }
-          // Transform context before drawing image
           switch (orientation) {
-            case 2: ctx.transform(-1, 0, 0, 1, w, 0); break; // Mirror X
-            case 3: ctx.transform(-1, 0, 0, -1, w, h); break; // 180°
-            case 4: ctx.transform(1, 0, 0, -1, 0, h); break; // Mirror Y
-            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break; // Mirror + rotate 90
-            case 6: ctx.transform(0, 1, -1, 0, h, 0); break; // rotate 90
-            case 7: ctx.transform(0, -1, -1, 0, h, w); break; // Mirror + rotate 270
-            case 8: ctx.transform(0, -1, 1, 0, 0, w); break; // rotate 270
+            case 2: ctx.transform(-1, 0, 0, 1, w, 0); break;
+            case 3: ctx.transform(-1, 0, 0, -1, w, h); break;
+            case 4: ctx.transform(1, 0, 0, -1, 0, h); break;
+            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+            case 6: ctx.transform(0, 1, -1, 0, h, 0); break;
+            case 7: ctx.transform(0, -1, -1, 0, h, w); break;
+            case 8: ctx.transform(0, -1, 1, 0, 0, w); break;
             default: break;
           }
           ctx.drawImage(img, 0, 0);
-
           let dataURL = canvas.toDataURL('image/jpeg', 0.95);
-          document.getElementById('imgPreview').src = dataURL;
-          document.getElementById('imgPreview').style.display = 'inline-block';
-          latestImage = dataURL;
+          callback(dataURL);
         };
         img.src = ev.target.result;
       });
     };
     reader.readAsDataURL(file);
+  }
+
+  document.getElementById('picture').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) { resetPreview(); return; }
+    getOrientationFixedDataURL(file, function(dataURL) {
+      document.getElementById('imgPreview').src = dataURL;
+      document.getElementById('imgPreview').style.display = 'inline-block';
+      latestImage = dataURL;
+    });
   });
 
   function addIssue() {
@@ -154,13 +180,15 @@
       status.textContent = "";
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      lastLat = lat; lastLng = lng;
+      map.setView([lat, lng], 21);
 
-      // Add marker to map
-      const marker = L.marker([lat, lng]).addTo(map)
-        .bindPopup(`<strong>${desc}</strong><br>${comments ? comments : ""}<br><small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>`);
+      // Add numbered marker to map
+      const marker = L.marker([lat, lng], {icon: createNumberedDivIcon(issues.length+1)})
+        .addTo(map)
+        .bindPopup(`<strong>#${issues.length+1}: ${desc}</strong><br>${comments ? comments : ""}<br><small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>`);
       markers.push(marker);
 
-      // Save issue (with image as dataURL)
       const issue = {
         desc, comments, lat, lng,
         timestamp: new Date().toLocaleString(),
@@ -168,19 +196,26 @@
       };
       issues.push(issue);
 
-      // Refresh issue list
       showIssues();
-      // Reset form
       document.getElementById('issueForm').reset();
       resetPreview();
-      // Center/zoom map on new marker
-      map.setView([lat, lng], 19);
     }, function(err){
       status.textContent = "Location error: " + err.message;
     }, { enableHighAccuracy: true, timeout: 8000 });
   }
 
   function showIssues() {
+    // Clear map markers and redraw all with numbers
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    issues.forEach((issue, idx) => {
+      let marker = L.marker([issue.lat, issue.lng], {icon: createNumberedDivIcon(idx+1)})
+        .addTo(map)
+        .bindPopup(`<strong>#${idx+1}: ${issue.desc}</strong><br>${issue.comments ? issue.comments : ""}<br><small>${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}</small>`);
+      markers.push(marker);
+    });
+
+    // Issue list
     const list = document.getElementById('issueList');
     if (!issues.length) {
       list.innerHTML = "<h2>Reported Issues</h2><em>No issues reported yet.</em>";
@@ -207,24 +242,6 @@
       return;
     }
 
-    // Make map image higher-res for PDF
-    const mapNode = document.getElementById('map');
-    const scale = 3;
-    const origWidth = mapNode.offsetWidth, origHeight = mapNode.offsetHeight;
-    mapNode.style.width = (origWidth * scale) + "px";
-    mapNode.style.height = (origHeight * scale) + "px";
-    map.invalidateSize();
-    await new Promise(resolve => setTimeout(resolve, 600)); // let the map tiles load
-
-    const mapCanvas = await html2canvas(mapNode, { useCORS: true, scale: scale });
-    const mapImgData = mapCanvas.toDataURL('image/png');
-
-    // Reset map to normal size
-    mapNode.style.width = origWidth + "px";
-    mapNode.style.height = origHeight + "px";
-    map.invalidateSize();
-
-    // PDF generation
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({
       orientation: 'portrait',
@@ -232,25 +249,20 @@
       format: 'a4'
     });
 
+    let y = 20;
     pdf.setFontSize(20);
-    pdf.text("Field Report", 15, 18);
+    pdf.text("Field Report", 15, y);
+    y += 10;
 
-    pdf.setFontSize(12);
-    pdf.text("Map Overview:", 15, 28);
-    const mapW = 140, mapH = 45;
-    pdf.addImage(mapImgData, 'PNG', 15, 30, mapW, mapH);
-
-    let y = 80;
+    let perPage = 0;
     pdf.setFontSize(14);
     pdf.text("Reported Issues:", 15, y);
     y += 5;
 
     issues.forEach((issue, i) => {
-      if (y > 260) { pdf.addPage(); y = 15; }
-
+      if (y > 240) { pdf.addPage(); y = 15; }
       pdf.setFontSize(12);
-      pdf.text(`#${i+1}: ${issue.desc}`, 15, y);
-      y += 7;
+      pdf.text(`#${i+1}: ${issue.desc}`, 15, y); y += 7;
 
       if (issue.comments) {
         pdf.setFont("helvetica", "italic");
@@ -258,13 +270,10 @@
         pdf.setFont("helvetica", "normal");
         y += 6;
       }
-      pdf.text(`Location: ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}`, 18, y);
-      y += 5;
-      pdf.text(`Date: ${issue.timestamp}`, 18, y);
-      y += 6;
+      pdf.text(`Location: ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}`, 18, y); y += 5;
+      pdf.text(`Date: ${issue.timestamp}`, 18, y); y += 6;
 
       if (issue.image) {
-        // Add image, larger now
         let imgProps = pdf.getImageProperties(issue.image);
         let imgW = 90, imgH = (imgProps.height / imgProps.width) * imgW;
         if (imgH > 60) { imgH = 60; imgW = (imgProps.width / imgProps.height) * imgH; }
@@ -273,6 +282,28 @@
       }
       y += 3;
     });
+
+    // MAP OVERVIEW (last page)
+    pdf.addPage();
+
+    // For high-res map snapshot
+    const mapNode = document.getElementById('map');
+    const scale = 3;
+    const origWidth = mapNode.offsetWidth, origHeight = mapNode.offsetHeight;
+    mapNode.style.width = (origWidth * scale) + "px";
+    mapNode.style.height = (origHeight * scale) + "px";
+    map.invalidateSize();
+    await new Promise(resolve => setTimeout(resolve, 700));
+    const mapCanvas = await html2canvas(mapNode, { useCORS: true, scale: scale });
+    const mapImgData = mapCanvas.toDataURL('image/png');
+    mapNode.style.width = origWidth + "px";
+    mapNode.style.height = origHeight + "px";
+    map.invalidateSize();
+
+    pdf.setFontSize(20);
+    pdf.text("Map Overview", 15, 18);
+    const mapW = 140, mapH = 45;
+    pdf.addImage(mapImgData, 'PNG', 15, 22, mapW, mapH);
 
     pdf.save('field_report.pdf');
   }
