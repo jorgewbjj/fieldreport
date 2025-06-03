@@ -256,18 +256,19 @@
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
   // ----------- SET YOUR MAPTILER API KEY HERE -----------
-  const MAPTILER_KEY = "g5EUyUQUMk4jNTFKi4Qv";  // <-- REPLACE WITH YOUR KEY!
+  const MAPTILER_KEY = "YOUR_MAPTILER_API_KEY"; // <-- REPLACE WITH YOUR KEY!
 
   let map = L.map('map', {zoomControl:false, attributionControl:false}).setView([0, 0], 22);
   let markers = [];
   let issues = [];
   let latestImages = [];
 
-  // MapTiler Hybrid Satellite Layer (Best Zoom)
+  // MapTiler Hybrid Satellite Layer (Best Zoom) + crossOrigin fix!
   L.tileLayer(`https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`, {
     tileSize: 256,
     maxZoom: 22,
-    attribution: '&copy; MapTiler, OpenStreetMap contributors'
+    attribution: '&copy; MapTiler, OpenStreetMap contributors',
+    crossOrigin: true  // REQUIRED FOR TILES TO LOAD
   }).addTo(map);
 
   function createNumberedDivIcon(number) {
@@ -480,7 +481,6 @@
       let bounds = L.latLngBounds(latlngs);
       map.fitBounds(bounds, {maxZoom: 22});
       setTimeout(() => {
-        // After fitBounds, zoom in to the center as much as possible
         let center = bounds.getCenter();
         map.setView(center, 22);
       }, 300);
