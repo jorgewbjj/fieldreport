@@ -43,7 +43,7 @@
     </label>
     <br>
     <label>Picture<br>
-      <input type="file" id="picture" accept="image/*" capture="environment">
+      <input type="file" id="picture" accept="image/*">
       <br>
       <img id="imgPreview" class="img-preview" style="display:none;">
     </label>
@@ -63,6 +63,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script>
   let map = L.map('map').setView([0, 0], 2);
   let markers = [];
@@ -74,28 +75,62 @@
     attribution: 'Tiles &copy; Esri'
   }).addTo(map);
 
-  // Center map to user's location
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-    });
+  // Geolocate and zoom close
+  function setMapToUser() {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 19); // building-level
+      });
+    }
+  }
+  setMapToUser();
+
+  // EXIF orientation fix
+  function resetPreview() {
+    document.getElementById('imgPreview').src = '';
+    document.getElementById('imgPreview').style.display = 'none';
+    latestImage = null;
   }
 
-  // Image preview on upload
   document.getElementById('picture').addEventListener('change', function(e) {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        document.getElementById('imgPreview').src = ev.target.result;
-        document.getElementById('imgPreview').style.display = 'inline-block';
-        latestImage = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      document.getElementById('imgPreview').style.display = 'none';
-      latestImage = null;
-    }
+    if (!file) { resetPreview(); return; }
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      // Read EXIF orientation
+      EXIF.getData(file, function() {
+        let orientation = EXIF.getTag(this, "Orientation") || 1;
+        let img = new window.Image();
+        img.onload = function() {
+          let canvas = document.createElement('canvas');
+          let ctx = canvas.getContext('2d');
+          let w = img.width, h = img.height;
+          // set proper canvas dimensions before transform
+          if (orientation > 4) { canvas.width = h; canvas.height = w; }
+          else { canvas.width = w; canvas.height = h; }
+          // Transform context before drawing image
+          switch (orientation) {
+            case 2: ctx.transform(-1, 0, 0, 1, w, 0); break; // Mirror X
+            case 3: ctx.transform(-1, 0, 0, -1, w, h); break; // 180°
+            case 4: ctx.transform(1, 0, 0, -1, 0, h); break; // Mirror Y
+            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break; // Mirror + rotate 90
+            case 6: ctx.transform(0, 1, -1, 0, h, 0); break; // rotate 90
+            case 7: ctx.transform(0, -1, -1, 0, h, w); break; // Mirror + rotate 270
+            case 8: ctx.transform(0, -1, 1, 0, 0, w); break; // rotate 270
+            default: break;
+          }
+          ctx.drawImage(img, 0, 0);
+
+          let dataURL = canvas.toDataURL('image/jpeg', 0.95);
+          document.getElementById('imgPreview').src = dataURL;
+          document.getElementById('imgPreview').style.display = 'inline-block';
+          latestImage = dataURL;
+        };
+        img.src = ev.target.result;
+      });
+    };
+    reader.readAsDataURL(file);
   });
 
   function addIssue() {
@@ -137,10 +172,9 @@
       showIssues();
       // Reset form
       document.getElementById('issueForm').reset();
-      document.getElementById('imgPreview').style.display = 'none';
-      latestImage = null;
-      // Center map on new marker
-      map.setView([lat, lng], 16);
+      resetPreview();
+      // Center/zoom map on new marker
+      map.setView([lat, lng], 19);
     }, function(err){
       status.textContent = "Location error: " + err.message;
     }, { enableHighAccuracy: true, timeout: 8000 });
@@ -173,12 +207,24 @@
       return;
     }
 
-    // 1. Capture map as image (smaller height)
+    // Make map image higher-res for PDF
     const mapNode = document.getElementById('map');
-    const mapCanvas = await html2canvas(mapNode, { useCORS: true });
+    const scale = 3;
+    const origWidth = mapNode.offsetWidth, origHeight = mapNode.offsetHeight;
+    mapNode.style.width = (origWidth * scale) + "px";
+    mapNode.style.height = (origHeight * scale) + "px";
+    map.invalidateSize();
+    await new Promise(resolve => setTimeout(resolve, 600)); // let the map tiles load
+
+    const mapCanvas = await html2canvas(mapNode, { useCORS: true, scale: scale });
     const mapImgData = mapCanvas.toDataURL('image/png');
 
-    // 2. Create PDF
+    // Reset map to normal size
+    mapNode.style.width = origWidth + "px";
+    mapNode.style.height = origHeight + "px";
+    map.invalidateSize();
+
+    // PDF generation
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({
       orientation: 'portrait',
@@ -186,14 +232,12 @@
       format: 'a4'
     });
 
-    // Title
     pdf.setFontSize(20);
     pdf.text("Field Report", 15, 18);
 
-    // Map
     pdf.setFontSize(12);
     pdf.text("Map Overview:", 15, 28);
-    const mapW = 140, mapH = 45; // Smaller map
+    const mapW = 140, mapH = 45;
     pdf.addImage(mapImgData, 'PNG', 15, 30, mapW, mapH);
 
     let y = 80;
