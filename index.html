@@ -19,6 +19,7 @@
     input, textarea, button { padding: 6px 10px; margin-top: 6px; font-size: 15px; border-radius: 7px; border: 1px solid #d7dae3; }
     button { background: #3874fa; color: #fff; border: none; font-weight: 600; cursor: pointer; }
     button:hover { background: #1d53c6; }
+    .img-preview { max-width: 120px; max-height: 90px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; }
     .row { display: flex; gap: 10px; }
     @media (max-width: 700px) {
       .container { margin: 0; border-radius: 0; box-shadow: none; }
@@ -40,6 +41,12 @@
       <textarea id="comments" rows="2" placeholder="Optional comments..."></textarea>
     </label>
     <br>
+    <label>Picture<br>
+      <input type="file" id="picture" accept="image/*" capture="environment">
+      <br>
+      <img id="imgPreview" class="img-preview" style="display:none;">
+    </label>
+    <br>
     <button type="button" onclick="addIssue()">Add Issue at My Location</button>
     <span id="status" style="color:#d00;margin-left:10px"></span>
   </form>
@@ -48,27 +55,44 @@
     <h2>Reported Issues</h2>
     <!-- Issues will be inserted here -->
   </div>
-  <button onclick="downloadReport()" style="margin-top:20px;">Download Report (CSV)</button>
+  <button onclick="generatePDF()" style="margin-top:20px;">Download PDF Report</button>
 </div>
 
-<!-- Leaflet JS -->
+<!-- JS libraries -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
   let map = L.map('map').setView([0, 0], 2);
   let markers = [];
   let issues = [];
+  let latestImage = null;
 
-  // Add tile layer (OpenStreetMap)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-  }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-  // Try to center map on user's location at start
+  // Center map to user's location
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(function(pos) {
       map.setView([pos.coords.latitude, pos.coords.longitude], 15);
     });
   }
+
+  // Image preview on upload
+  document.getElementById('picture').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        document.getElementById('imgPreview').src = ev.target.result;
+        document.getElementById('imgPreview').style.display = 'inline-block';
+        latestImage = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      document.getElementById('imgPreview').style.display = 'none';
+      latestImage = null;
+    }
+  });
 
   function addIssue() {
     const desc = document.getElementById('desc').value.trim();
@@ -97,10 +121,11 @@
         .bindPopup(`<strong>${desc}</strong><br>${comments ? comments : ""}<br><small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>`);
       markers.push(marker);
 
-      // Save issue
+      // Save issue (with image as dataURL)
       const issue = {
         desc, comments, lat, lng,
-        timestamp: new Date().toLocaleString()
+        timestamp: new Date().toLocaleString(),
+        image: latestImage
       };
       issues.push(issue);
 
@@ -108,15 +133,13 @@
       showIssues();
       // Reset form
       document.getElementById('issueForm').reset();
+      document.getElementById('imgPreview').style.display = 'none';
+      latestImage = null;
       // Center map on new marker
       map.setView([lat, lng], 16);
-
     }, function(err){
       status.textContent = "Location error: " + err.message;
-    }, {
-      enableHighAccuracy: true,
-      timeout: 8000
-    });
+    }, { enableHighAccuracy: true, timeout: 8000 });
   }
 
   function showIssues() {
@@ -132,37 +155,78 @@
           <strong>#${i+1}: ${issue.desc}</strong>
           ${issue.comments ? `<div>💬 <em>${issue.comments}</em></div>` : ""}
           <small>📍 ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}<br>
-          🕒 ${issue.timestamp}</small>
+          🕒 ${issue.timestamp}</small><br>
+          ${issue.image ? `<img src="${issue.image}" class="img-preview" alt="Issue Image">` : ""}
         </div>
       `;
     });
     list.innerHTML = html;
   }
 
-  function downloadReport() {
+  async function generatePDF() {
     if (!issues.length) {
       alert("No issues to export!");
       return;
     }
-    const headers = ['Description', 'Comments', 'Latitude', 'Longitude', 'Timestamp'];
-    const rows = [headers];
-    issues.forEach(iss => {
-      rows.push([
-        iss.desc.replace(/"/g, '""'),
-        iss.comments.replace(/"/g, '""'),
-        iss.lat,
-        iss.lng,
-        iss.timestamp
-      ]);
+
+    // 1. Capture map as image
+    const mapNode = document.getElementById('map');
+    const mapCanvas = await html2canvas(mapNode, { useCORS: true });
+    const mapImgData = mapCanvas.toDataURL('image/png');
+
+    // 2. Create PDF
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
-    const csvContent = rows.map(r => r.map(cell => `"${cell}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], {type:'text/csv'});
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'field_report.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    // Title
+    pdf.setFontSize(20);
+    pdf.text("Field Report", 15, 18);
+
+    // Map
+    pdf.setFontSize(12);
+    pdf.text("Map Overview:", 15, 28);
+    const mapW = 180, mapH = 70;
+    pdf.addImage(mapImgData, 'PNG', 15, 30, mapW, mapH);
+
+    let y = 105;
+    pdf.setFontSize(14);
+    pdf.text("Reported Issues:", 15, y);
+    y += 5;
+
+    issues.forEach((issue, i) => {
+      if (y > 260) { pdf.addPage(); y = 15; }
+
+      pdf.setFontSize(12);
+      pdf.text(`#${i+1}: ${issue.desc}`, 15, y);
+      y += 7;
+
+      if (issue.comments) {
+        pdf.setFont("helvetica", "italic");
+        pdf.text(`💬 ${issue.comments}`, 18, y);
+        pdf.setFont("helvetica", "normal");
+        y += 6;
+      }
+      pdf.text(`Location: ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}`, 18, y);
+      y += 5;
+      pdf.text(`Date: ${issue.timestamp}`, 18, y);
+      y += 6;
+
+      if (issue.image) {
+        // Add image, scaled to fit
+        let imgProps = pdf.getImageProperties(issue.image);
+        let imgW = 50, imgH = (imgProps.height / imgProps.width) * imgW;
+        if (imgH > 35) { imgH = 35; imgW = (imgProps.width / imgProps.height) * imgH; }
+        pdf.addImage(issue.image, 'JPEG', 18, y, imgW, imgH);
+        y += imgH + 4;
+      }
+      y += 3;
+    });
+
+    pdf.save('field_report.pdf');
   }
 
   showIssues();
