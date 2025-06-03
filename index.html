@@ -255,14 +255,19 @@
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
-  let map = L.map('map', {zoomControl:false, attributionControl:false}).setView([0, 0], 21);
+  // ----------- SET YOUR MAPTILER API KEY HERE -----------
+  const MAPTILER_KEY = "g5EUyUQUMk4jNTFKi4Qv";  // <-- REPLACE WITH YOUR KEY!
+
+  let map = L.map('map', {zoomControl:false, attributionControl:false}).setView([0, 0], 22);
   let markers = [];
   let issues = [];
   let latestImages = [];
 
-  // Esri Satellite Layer
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri'
+  // MapTiler Hybrid Satellite Layer (Best Zoom)
+  L.tileLayer(`https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`, {
+    tileSize: 256,
+    maxZoom: 22,
+    attribution: '&copy; MapTiler, OpenStreetMap contributors'
   }).addTo(map);
 
   function createNumberedDivIcon(number) {
@@ -277,7 +282,7 @@
   function setMapToUser() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(function(pos) {
-        map.setView([pos.coords.latitude, pos.coords.longitude], 21);
+        map.setView([pos.coords.latitude, pos.coords.longitude], 22);
       });
     }
   }
@@ -387,7 +392,7 @@
       showIssues();
       document.getElementById('issueForm').reset();
       resetPreview();
-      map.setView([lat, lng], 21);
+      map.setView([lat, lng], 22);
     }, function(err){
       status.textContent = "Location error: " + err.message;
     }, { enableHighAccuracy: true, timeout: 8000 });
@@ -467,17 +472,17 @@
     // MAP OVERVIEW (last page)
     pdf.addPage();
 
-    // Ultra zoom for map: center and zoom 21, or fit bounds but then max zoom in
+    // Ultra zoom for map: center and zoom 22, or fit bounds then zoom to 22
     if (issues.length === 1) {
-      map.setView([issues[0].lat, issues[0].lng], 21);
+      map.setView([issues[0].lat, issues[0].lng], 22);
     } else if (issues.length > 1) {
       let latlngs = issues.map(iss => [iss.lat, iss.lng]);
       let bounds = L.latLngBounds(latlngs);
-      map.fitBounds(bounds, {maxZoom: 21});
+      map.fitBounds(bounds, {maxZoom: 22});
       setTimeout(() => {
         // After fitBounds, zoom in to the center as much as possible
         let center = bounds.getCenter();
-        map.setView(center, 21);
+        map.setView(center, 22);
       }, 300);
     }
     await new Promise(resolve => setTimeout(resolve, 900));
@@ -499,7 +504,7 @@
     pdf.addImage(mapImgData, 'PNG', 15, 22, mapW, mapH);
     pdf.save('field_report.pdf');
     if (issues.length) {
-      map.setView([issues[issues.length - 1].lat, issues[issues.length - 1].lng], 21);
+      map.setView([issues[issues.length - 1].lat, issues[issues.length - 1].lng], 22);
     }
   }
 
