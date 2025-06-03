@@ -42,19 +42,55 @@
       background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center;
     }
     #cropperBox {
-      background: #fff; padding: 24px 12px 16px 12px; border-radius: 12px; box-shadow: 0 2px 20px #0005; text-align: center;
-      min-width: 320px;
-      max-width: 96vw;
+      background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #0005; text-align: center;
+      display: flex; flex-direction: column;
+      max-width: 98vw; max-height: 94vh;
+      width: 98vw;
+      height: 94vh;
+      padding: 0;
+      position: relative;
     }
-    #cropperImage { max-width: 90vw; max-height: 60vh; display: block; margin: 0 auto 18px auto;}
-    .cropper-btns { margin-top: 7px; }
-    .cropper-btns button { margin: 0 3px; }
+    #cropperBox h3 {
+      margin: 16px 0 10px 0;
+      font-size: 18px;
+    }
+    #cropperScroll {
+      flex: 1 1 auto;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      min-width: 0;
+    }
+    #cropperImage {
+      max-width: 96vw;
+      max-height: 65vh;
+      display: block;
+      margin: 0 auto;
+      background: #eee;
+    }
+    .cropper-btns {
+      flex: none;
+      background: #fff;
+      padding: 12px 0 8px 0;
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 -2px 8px #0001;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      position: sticky;
+      bottom: 0;
+      left: 0;
+    }
+    .cropper-btns button { margin: 0 1.5vw; }
     @media (max-width: 700px) {
       .container { margin: 0; border-radius: 0; box-shadow: none; }
       #map { height: 120px; }
       .img-preview { max-width: 90vw; }
       textarea { min-height: 38px; }
-      #cropperImage { max-width: 98vw; }
+      #cropperBox { min-width: 0; }
+      #cropperImage { max-width: 97vw; }
     }
   </style>
 </head>
@@ -92,7 +128,9 @@
 <div id="cropperModal">
   <div id="cropperBox">
     <h3>Adjust Image</h3>
-    <img id="cropperImage" alt="Cropper">
+    <div id="cropperScroll">
+      <img id="cropperImage" alt="Cropper">
+    </div>
     <div class="cropper-btns">
       <button onclick="rotateCropper(-90)" type="button">⟲ Rotate Left</button>
       <button onclick="rotateCropper(90)" type="button">⟳ Rotate Right</button>
@@ -162,6 +200,7 @@
           rotatable: true,
           movable: false,
           zoomable: false,
+          responsive: true,
         });
       }, 60);
     };
