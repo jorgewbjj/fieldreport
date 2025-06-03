@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- Cropper.js CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet"/>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; background: #f4f6fb; }
     .container { max-width: 700px; margin: 40px auto; padding: 24px; background: #fff; border-radius: 16px; box-shadow: 0 3px 24px #0001; }
@@ -20,7 +22,7 @@
     textarea { min-height: 48px; resize: vertical; width: 100%; }
     button { background: #3874fa; color: #fff; border: none; font-weight: 600; cursor: pointer; }
     button:hover { background: #1d53c6; }
-    .img-preview { max-width: 220px; max-height: 160px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; }
+    .img-preview { max-width: 220px; max-height: 146px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; }
     .marker-number {
       background: #3874fa;
       color: #fff;
@@ -34,11 +36,25 @@
       box-shadow: 0 2px 6px #0004;
       font-weight: bold;
     }
+    /* Modal for cropper */
+    #cropperModal {
+      position: fixed; z-index: 10000; left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center;
+    }
+    #cropperBox {
+      background: #fff; padding: 24px 12px 16px 12px; border-radius: 12px; box-shadow: 0 2px 20px #0005; text-align: center;
+      min-width: 320px;
+      max-width: 96vw;
+    }
+    #cropperImage { max-width: 90vw; max-height: 60vh; display: block; margin: 0 auto 18px auto;}
+    .cropper-btns { margin-top: 7px; }
+    .cropper-btns button { margin: 0 3px; }
     @media (max-width: 700px) {
       .container { margin: 0; border-radius: 0; box-shadow: none; }
       #map { height: 120px; }
       .img-preview { max-width: 90vw; }
       textarea { min-height: 38px; }
+      #cropperImage { max-width: 98vw; }
     }
   </style>
 </head>
@@ -72,11 +88,26 @@
   <button onclick="generatePDF()" style="margin-top:20px;">Download PDF Report</button>
 </div>
 
-<!-- JS libraries -->
+<!-- Modal for cropping/rotation -->
+<div id="cropperModal">
+  <div id="cropperBox">
+    <h3>Adjust Image</h3>
+    <img id="cropperImage" alt="Cropper">
+    <div class="cropper-btns">
+      <button onclick="rotateCropper(-90)" type="button">⟲ Rotate Left</button>
+      <button onclick="rotateCropper(90)" type="button">⟳ Rotate Right</button>
+      <button onclick="confirmCropper()" type="button" style="background:#3874fa;">Confirm</button>
+      <button onclick="cancelCropper()" type="button" style="background:#ccc;color:#333;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Libraries -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
   let map = L.map('map').setView([0, 0], 21);
   let markers = [];
@@ -97,7 +128,6 @@
     });
   }
 
-  // Geolocate and zoom as close as possible
   function setMapToUser() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(function(pos) {
@@ -113,47 +143,50 @@
     latestImage = null;
   }
 
-  function getOrientationFixedDataURL(file, callback) {
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-      EXIF.getData(file, function() {
-        let orientation = EXIF.getTag(this, "Orientation") || 1;
-        let img = new window.Image();
-        img.onload = function() {
-          let canvas = document.createElement('canvas');
-          let ctx = canvas.getContext('2d');
-          let w = img.width, h = img.height;
-          if (orientation > 4) { canvas.width = h; canvas.height = w; }
-          else { canvas.width = w; canvas.height = h; }
-          switch (orientation) {
-            case 2: ctx.transform(-1, 0, 0, 1, w, 0); break;
-            case 3: ctx.transform(-1, 0, 0, -1, w, h); break;
-            case 4: ctx.transform(1, 0, 0, -1, 0, h); break;
-            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
-            case 6: ctx.transform(0, 1, -1, 0, h, 0); break;
-            case 7: ctx.transform(0, -1, -1, 0, h, w); break;
-            case 8: ctx.transform(0, -1, 1, 0, 0, w); break;
-            default: break;
-          }
-          ctx.drawImage(img, 0, 0);
-          let dataURL = canvas.toDataURL('image/jpeg', 0.95);
-          callback(dataURL);
-        };
-        img.src = ev.target.result;
-      });
-    };
-    reader.readAsDataURL(file);
-  }
-
+  // CROP & ROTATE FUNCTIONALITY:
+  let cropper = null, cropperFile = null;
   document.getElementById('picture').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) { resetPreview(); return; }
-    getOrientationFixedDataURL(file, function(dataURL) {
-      document.getElementById('imgPreview').src = dataURL;
-      document.getElementById('imgPreview').style.display = 'inline-block';
-      latestImage = dataURL;
-    });
+    cropperFile = file;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      document.getElementById('cropperImage').src = ev.target.result;
+      document.getElementById('cropperModal').style.display = 'flex';
+      if (cropper) { cropper.destroy(); }
+      setTimeout(() => {
+        cropper = new Cropper(document.getElementById('cropperImage'), {
+          aspectRatio: 3/2,
+          viewMode: 1,
+          autoCropArea: 1,
+          rotatable: true,
+          movable: false,
+          zoomable: false,
+        });
+      }, 60);
+    };
+    reader.readAsDataURL(file);
   });
+
+  function rotateCropper(deg) {
+    if (cropper) cropper.rotate(deg);
+  }
+  function cancelCropper() {
+    if (cropper) { cropper.destroy(); cropper = null; }
+    document.getElementById('cropperModal').style.display = 'none';
+    document.getElementById('picture').value = "";
+  }
+  function confirmCropper() {
+    if (!cropper) return;
+    // Force fixed output size and always JPEG (landscape 900x600 px)
+    const canvas = cropper.getCroppedCanvas({width:900, height:600, fillColor:"#fff"});
+    let dataURL = canvas.toDataURL('image/jpeg', 0.95);
+    document.getElementById('imgPreview').src = dataURL;
+    document.getElementById('imgPreview').style.display = 'inline-block';
+    latestImage = dataURL;
+    cropper.destroy(); cropper = null;
+    document.getElementById('cropperModal').style.display = 'none';
+  }
 
   function addIssue() {
     const desc = document.getElementById('desc').value.trim();
@@ -165,36 +198,28 @@
       status.textContent = "Description required.";
       return;
     }
-
     if (!("geolocation" in navigator)) {
       status.textContent = "Geolocation not supported.";
       return;
     }
-
     status.textContent = "Getting location...";
     navigator.geolocation.getCurrentPosition(function(pos) {
       status.textContent = "";
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
-
-      // Add marker with number
       const marker = L.marker([lat, lng], {icon: createNumberedDivIcon(issues.length+1)})
         .addTo(map)
         .bindPopup(`<strong>#${issues.length+1}: ${desc}</strong><br>${comments ? comments : ""}<br><small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>`);
       markers.push(marker);
-
       const issue = {
         desc, comments, lat, lng,
         timestamp: new Date().toLocaleString(),
         image: latestImage
       };
       issues.push(issue);
-
       showIssues();
       document.getElementById('issueForm').reset();
       resetPreview();
-
-      // Always zoom to max and center
       map.setView([lat, lng], 21);
     }, function(err){
       status.textContent = "Location error: " + err.message;
@@ -202,7 +227,6 @@
   }
 
   function showIssues() {
-    // Remove all markers and redraw with proper numbers
     markers.forEach(m => map.removeLayer(m));
     markers = [];
     issues.forEach((issue, idx) => {
@@ -211,8 +235,6 @@
         .bindPopup(`<strong>#${idx+1}: ${issue.desc}</strong><br>${issue.comments ? issue.comments : ""}<br><small>${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}</small>`);
       markers.push(marker);
     });
-
-    // Update list
     const list = document.getElementById('issueList');
     if (!issues.length) {
       list.innerHTML = "<h2>Reported Issues</h2><em>No issues reported yet.</em>";
@@ -247,34 +269,25 @@
     pdf.setFontSize(14);
     pdf.text("Reported Issues:", 15, y);
     y += 5;
-
     issues.forEach((issue, i) => {
       if (y > 230) { pdf.addPage(); y = 15; }
       pdf.setFontSize(12);
       pdf.text(`#${i+1}: ${issue.desc}`, 15, y); y += 7;
-
       if (issue.comments) {
         pdf.setFont("helvetica", "normal");
-        pdf.text(`Comment: ${issue.comments}`, 18, y);
-        y += 6;
+        pdf.text(`Comment: ${issue.comments}`, 18, y); y += 6;
       }
       pdf.text(`Location: ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}`, 18, y); y += 5;
       pdf.text(`Date: ${issue.timestamp}`, 18, y); y += 6;
-
       if (issue.image) {
-        let imgProps = pdf.getImageProperties(issue.image);
-        let imgW = 90, imgH = (imgProps.height / imgProps.width) * imgW;
-        if (imgH > 60) { imgH = 60; imgW = (imgProps.width / imgProps.height) * imgH; }
-        pdf.addImage(issue.image, 'JPEG', 18, y, imgW, imgH);
-        y += imgH + 4;
+        pdf.addImage(issue.image, 'JPEG', 18, y, 90, 60); // All images are 3:2 landscape
+        y += 60 + 4;
       }
       y += 3;
     });
 
     // MAP OVERVIEW (last page)
     pdf.addPage();
-
-    // Zoom/fit for PDF map snapshot:
     if (issues.length === 1) {
       map.setView([issues[0].lat, issues[0].lng], 21);
     } else if (issues.length > 1) {
@@ -283,8 +296,6 @@
       map.fitBounds(bounds, {maxZoom: 21});
     }
     await new Promise(resolve => setTimeout(resolve, 700));
-
-    // High-res map snapshot
     const mapNode = document.getElementById('map');
     const scale = 3;
     const origWidth = mapNode.offsetWidth, origHeight = mapNode.offsetHeight;
@@ -297,18 +308,20 @@
     mapNode.style.width = origWidth + "px";
     mapNode.style.height = origHeight + "px";
     map.invalidateSize();
-
     pdf.setFontSize(20);
     pdf.text("Map Overview", 15, 18);
     const mapW = 140, mapH = 45;
     pdf.addImage(mapImgData, 'PNG', 15, 22, mapW, mapH);
-
     pdf.save('field_report.pdf');
-    // Optionally, reset the map view
     if (issues.length) {
       map.setView([issues[issues.length - 1].lat, issues[issues.length - 1].lng], 21);
     }
   }
+
+  // Expose cropper modal controls
+  window.rotateCropper = rotateCropper;
+  window.cancelCropper = cancelCropper;
+  window.confirmCropper = confirmCropper;
 
   showIssues();
 </script>
