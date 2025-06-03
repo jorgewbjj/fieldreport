@@ -17,15 +17,10 @@
     .issue-card small { color: #888; }
     label { font-weight: 600; }
     input, textarea, button { padding: 6px 10px; margin-top: 6px; font-size: 15px; border-radius: 7px; border: 1px solid #d7dae3; }
+    textarea { min-height: 48px; resize: vertical; width: 100%; }
     button { background: #3874fa; color: #fff; border: none; font-weight: 600; cursor: pointer; }
     button:hover { background: #1d53c6; }
     .img-preview { max-width: 220px; max-height: 160px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; }
-    .row { display: flex; gap: 10px; }
-    @media (max-width: 700px) {
-      .container { margin: 0; border-radius: 0; box-shadow: none; }
-      #map { height: 120px; }
-      .img-preview { max-width: 90vw; }
-    }
     .marker-number {
       background: #3874fa;
       color: #fff;
@@ -38,6 +33,12 @@
       border: 2px solid #fff;
       box-shadow: 0 2px 6px #0004;
       font-weight: bold;
+    }
+    @media (max-width: 700px) {
+      .container { margin: 0; border-radius: 0; box-shadow: none; }
+      #map { height: 120px; }
+      .img-preview { max-width: 90vw; }
+      textarea { min-height: 38px; }
     }
   </style>
 </head>
@@ -52,7 +53,7 @@
     </label>
     <br>
     <label>Comments<br>
-      <textarea id="comments" rows="2" placeholder="Optional comments..."></textarea>
+      <textarea id="comments" placeholder="Add any relevant comments or details (optional)"></textarea>
     </label>
     <br>
     <label>Picture<br>
@@ -77,18 +78,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script>
-  let map = L.map('map').setView([0, 0], 2);
+  let map = L.map('map').setView([0, 0], 21);
   let markers = [];
   let issues = [];
   let latestImage = null;
-  let lastLat = 0, lastLng = 0;
 
   // Esri Satellite Layer
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri'
   }).addTo(map);
 
-  // Numbered marker icon generator
   function createNumberedDivIcon(number) {
     return L.divIcon({
       className: 'marker-number',
@@ -98,19 +97,16 @@
     });
   }
 
-  // Geolocate and zoom very close
+  // Geolocate and zoom as close as possible
   function setMapToUser() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(function(pos) {
-        lastLat = pos.coords.latitude;
-        lastLng = pos.coords.longitude;
-        map.setView([lastLat, lastLng], 21); // Maximum supported
+        map.setView([pos.coords.latitude, pos.coords.longitude], 21);
       });
     }
   }
   setMapToUser();
 
-  // EXIF orientation fix + preview
   function resetPreview() {
     document.getElementById('imgPreview').src = '';
     document.getElementById('imgPreview').style.display = 'none';
@@ -180,10 +176,8 @@
       status.textContent = "";
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
-      lastLat = lat; lastLng = lng;
-      map.setView([lat, lng], 21);
 
-      // Add numbered marker to map
+      // Add marker with number
       const marker = L.marker([lat, lng], {icon: createNumberedDivIcon(issues.length+1)})
         .addTo(map)
         .bindPopup(`<strong>#${issues.length+1}: ${desc}</strong><br>${comments ? comments : ""}<br><small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>`);
@@ -199,13 +193,16 @@
       showIssues();
       document.getElementById('issueForm').reset();
       resetPreview();
+
+      // Always zoom to max and center
+      map.setView([lat, lng], 21);
     }, function(err){
       status.textContent = "Location error: " + err.message;
     }, { enableHighAccuracy: true, timeout: 8000 });
   }
 
   function showIssues() {
-    // Clear map markers and redraw all with numbers
+    // Remove all markers and redraw with proper numbers
     markers.forEach(m => map.removeLayer(m));
     markers = [];
     issues.forEach((issue, idx) => {
@@ -215,7 +212,7 @@
       markers.push(marker);
     });
 
-    // Issue list
+    // Update list
     const list = document.getElementById('issueList');
     if (!issues.length) {
       list.innerHTML = "<h2>Reported Issues</h2><em>No issues reported yet.</em>";
@@ -226,7 +223,7 @@
       html += `
         <div class="issue-card">
           <strong>#${i+1}: ${issue.desc}</strong>
-          ${issue.comments ? `<div>💬 <em>${issue.comments}</em></div>` : ""}
+          ${issue.comments ? `<div><b>Comment:</b> <em>${issue.comments}</em></div>` : ""}
           <small>📍 ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}<br>
           🕒 ${issue.timestamp}</small><br>
           ${issue.image ? `<img src="${issue.image}" class="img-preview" alt="Issue Image">` : ""}
@@ -241,33 +238,24 @@
       alert("No issues to export!");
       return;
     }
-
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
+    const pdf = new jsPDF({orientation: 'portrait', unit: 'mm', format: 'a4'});
     let y = 20;
     pdf.setFontSize(20);
     pdf.text("Field Report", 15, y);
     y += 10;
-
-    let perPage = 0;
     pdf.setFontSize(14);
     pdf.text("Reported Issues:", 15, y);
     y += 5;
 
     issues.forEach((issue, i) => {
-      if (y > 240) { pdf.addPage(); y = 15; }
+      if (y > 230) { pdf.addPage(); y = 15; }
       pdf.setFontSize(12);
       pdf.text(`#${i+1}: ${issue.desc}`, 15, y); y += 7;
 
       if (issue.comments) {
-        pdf.setFont("helvetica", "italic");
-        pdf.text(`💬 ${issue.comments}`, 18, y);
         pdf.setFont("helvetica", "normal");
+        pdf.text(`Comment: ${issue.comments}`, 18, y);
         y += 6;
       }
       pdf.text(`Location: ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}`, 18, y); y += 5;
@@ -286,7 +274,17 @@
     // MAP OVERVIEW (last page)
     pdf.addPage();
 
-    // For high-res map snapshot
+    // Zoom/fit for PDF map snapshot:
+    if (issues.length === 1) {
+      map.setView([issues[0].lat, issues[0].lng], 21);
+    } else if (issues.length > 1) {
+      let latlngs = issues.map(iss => [iss.lat, iss.lng]);
+      let bounds = L.latLngBounds(latlngs);
+      map.fitBounds(bounds, {maxZoom: 21});
+    }
+    await new Promise(resolve => setTimeout(resolve, 700));
+
+    // High-res map snapshot
     const mapNode = document.getElementById('map');
     const scale = 3;
     const origWidth = mapNode.offsetWidth, origHeight = mapNode.offsetHeight;
@@ -306,6 +304,10 @@
     pdf.addImage(mapImgData, 'PNG', 15, 22, mapW, mapH);
 
     pdf.save('field_report.pdf');
+    // Optionally, reset the map view
+    if (issues.length) {
+      map.setView([issues[issues.length - 1].lat, issues[issues.length - 1].lng], 21);
+    }
   }
 
   showIssues();
