@@ -22,7 +22,8 @@
     textarea { min-height: 48px; resize: vertical; width: 100%; }
     button { background: #3874fa; color: #fff; border: none; font-weight: 600; cursor: pointer; }
     button:hover { background: #1d53c6; }
-    .img-preview { max-width: 220px; max-height: 146px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; }
+    .img-preview-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;}
+    .img-preview { max-width: 100px; max-height: 66px; border-radius: 8px; border: 1px solid #ccc; object-fit: cover; }
     .marker-number {
       background: #3874fa;
       color: #fff;
@@ -36,7 +37,6 @@
       box-shadow: 0 2px 6px #0004;
       font-weight: bold;
     }
-    /* Modal for cropper */
     #cropperModal {
       position: fixed; z-index: 10000; left: 0; top: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center;
@@ -45,31 +45,11 @@
       background: #fff; border-radius: 12px; box-shadow: 0 2px 20px #0005; text-align: center;
       display: flex; flex-direction: column;
       max-width: 98vw; max-height: 94vh;
-      width: 98vw;
-      height: 94vh;
-      padding: 0;
-      position: relative;
+      width: 98vw; height: 94vh; padding: 0; position: relative;
     }
-    #cropperBox h3 {
-      margin: 16px 0 10px 0;
-      font-size: 18px;
-    }
-    #cropperScroll {
-      flex: 1 1 auto;
-      overflow: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 0;
-      min-width: 0;
-    }
-    #cropperImage {
-      max-width: 96vw;
-      max-height: 65vh;
-      display: block;
-      margin: 0 auto;
-      background: #eee;
-    }
+    #cropperBox h3 { margin: 16px 0 10px 0; font-size: 18px; }
+    #cropperScroll { flex: 1 1 auto; overflow: auto; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; }
+    #cropperImage { max-width: 96vw; max-height: 65vh; display: block; margin: 0 auto; background: #eee; }
     .cropper-btns {
       flex: none;
       background: #fff;
@@ -80,14 +60,14 @@
       justify-content: center;
       gap: 6px;
       position: sticky;
-      bottom: 0;
-      left: 0;
+      bottom: 0; left: 0;
     }
     .cropper-btns button { margin: 0 1.5vw; }
     @media (max-width: 700px) {
       .container { margin: 0; border-radius: 0; box-shadow: none; }
       #map { height: 120px; }
-      .img-preview { max-width: 90vw; }
+      .img-preview { max-width: 46vw; }
+      .img-preview-group { gap: 5px;}
       textarea { min-height: 38px; }
       #cropperBox { min-width: 0; }
       #cropperImage { max-width: 97vw; }
@@ -108,10 +88,10 @@
       <textarea id="comments" placeholder="Add any relevant comments or details (optional)"></textarea>
     </label>
     <br>
-    <label>Picture<br>
-      <input type="file" id="picture" accept="image/*">
+    <label>Pictures<br>
+      <input type="file" id="picture" accept="image/*" multiple>
       <br>
-      <img id="imgPreview" class="img-preview" style="display:none;">
+      <div class="img-preview-group" id="imgPreviewGroup"></div>
     </label>
     <br>
     <button type="button" onclick="addIssue()">Add Issue at My Location</button>
@@ -127,7 +107,7 @@
 <!-- Modal for cropping/rotation -->
 <div id="cropperModal">
   <div id="cropperBox">
-    <h3>Adjust Image</h3>
+    <h3>Adjust Image (<span id="cropperCount"></span>)</h3>
     <div id="cropperScroll">
       <img id="cropperImage" alt="Cropper">
     </div>
@@ -150,7 +130,7 @@
   let map = L.map('map').setView([0, 0], 21);
   let markers = [];
   let issues = [];
-  let latestImage = null;
+  let latestImages = [];
 
   // Esri Satellite Layer
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -176,20 +156,43 @@
   setMapToUser();
 
   function resetPreview() {
-    document.getElementById('imgPreview').src = '';
-    document.getElementById('imgPreview').style.display = 'none';
-    latestImage = null;
+    latestImages = [];
+    document.getElementById('imgPreviewGroup').innerHTML = '';
+    document.getElementById('picture').value = '';
   }
 
-  // CROP & ROTATE FUNCTIONALITY:
-  let cropper = null, cropperFile = null;
+  // MULTI-CROP & ROTATE FUNCTIONALITY:
+  let cropper = null, cropperFiles = [], cropperIndex = 0, tempImages = [];
   document.getElementById('picture').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) { resetPreview(); return; }
-    cropperFile = file;
+    cropperFiles = Array.from(e.target.files);
+    cropperIndex = 0;
+    tempImages = [];
+    if (!cropperFiles.length) { resetPreview(); return; }
+    startCropperProcess();
+  });
+
+  function startCropperProcess() {
+    if (cropperIndex >= cropperFiles.length) {
+      // All images done
+      latestImages = tempImages.slice();
+      // Show previews
+      const group = document.getElementById('imgPreviewGroup');
+      group.innerHTML = '';
+      latestImages.forEach(src => {
+        let img = document.createElement('img');
+        img.className = 'img-preview';
+        img.src = src;
+        group.appendChild(img);
+      });
+      document.getElementById('cropperModal').style.display = 'none';
+      if (cropper) { cropper.destroy(); cropper = null; }
+      return;
+    }
+    const file = cropperFiles[cropperIndex];
     const reader = new FileReader();
     reader.onload = function(ev) {
       document.getElementById('cropperImage').src = ev.target.result;
+      document.getElementById('cropperCount').textContent = (cropperIndex+1) + " / " + cropperFiles.length;
       document.getElementById('cropperModal').style.display = 'flex';
       if (cropper) { cropper.destroy(); }
       setTimeout(() => {
@@ -205,7 +208,7 @@
       }, 60);
     };
     reader.readAsDataURL(file);
-  });
+  }
 
   function rotateCropper(deg) {
     if (cropper) cropper.rotate(deg);
@@ -213,18 +216,16 @@
   function cancelCropper() {
     if (cropper) { cropper.destroy(); cropper = null; }
     document.getElementById('cropperModal').style.display = 'none';
-    document.getElementById('picture').value = "";
+    resetPreview();
   }
   function confirmCropper() {
     if (!cropper) return;
-    // Force fixed output size and always JPEG (landscape 900x600 px)
     const canvas = cropper.getCroppedCanvas({width:900, height:600, fillColor:"#fff"});
     let dataURL = canvas.toDataURL('image/jpeg', 0.95);
-    document.getElementById('imgPreview').src = dataURL;
-    document.getElementById('imgPreview').style.display = 'inline-block';
-    latestImage = dataURL;
+    tempImages.push(dataURL);
     cropper.destroy(); cropper = null;
-    document.getElementById('cropperModal').style.display = 'none';
+    cropperIndex++;
+    startCropperProcess();
   }
 
   function addIssue() {
@@ -232,7 +233,6 @@
     const comments = document.getElementById('comments').value.trim();
     const status = document.getElementById('status');
     status.textContent = '';
-
     if (!desc) {
       status.textContent = "Description required.";
       return;
@@ -253,7 +253,7 @@
       const issue = {
         desc, comments, lat, lng,
         timestamp: new Date().toLocaleString(),
-        image: latestImage
+        images: latestImages.slice()
       };
       issues.push(issue);
       showIssues();
@@ -287,7 +287,9 @@
           ${issue.comments ? `<div><b>Comment:</b> <em>${issue.comments}</em></div>` : ""}
           <small>📍 ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}<br>
           🕒 ${issue.timestamp}</small><br>
-          ${issue.image ? `<img src="${issue.image}" class="img-preview" alt="Issue Image">` : ""}
+          <div class="img-preview-group">
+            ${issue.images ? issue.images.map(src => `<img src="${src}" class="img-preview" alt="Issue Image">`).join('') : ''}
+          </div>
         </div>
       `;
     });
@@ -309,7 +311,7 @@
     pdf.text("Reported Issues:", 15, y);
     y += 5;
     issues.forEach((issue, i) => {
-      if (y > 230) { pdf.addPage(); y = 15; }
+      if (y > 210) { pdf.addPage(); y = 15; }
       pdf.setFontSize(12);
       pdf.text(`#${i+1}: ${issue.desc}`, 15, y); y += 7;
       if (issue.comments) {
@@ -318,9 +320,18 @@
       }
       pdf.text(`Location: ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}`, 18, y); y += 5;
       pdf.text(`Date: ${issue.timestamp}`, 18, y); y += 6;
-      if (issue.image) {
-        pdf.addImage(issue.image, 'JPEG', 18, y, 90, 60); // All images are 3:2 landscape
-        y += 60 + 4;
+      // Draw images 2 per row (90x60mm, landscape)
+      if (issue.images && issue.images.length) {
+        for(let idx=0; idx<issue.images.length; idx+=2) {
+          let x1 = 18, x2 = 18+92;
+          let w = 90, h = 60;
+          pdf.addImage(issue.images[idx], 'JPEG', x1, y, w, h);
+          if (idx+1 < issue.images.length) {
+            pdf.addImage(issue.images[idx+1], 'JPEG', x2, y, w, h);
+          }
+          y += h + 4;
+          if (y > 220 && (idx+2)<issue.images.length) { pdf.addPage(); y = 15; }
+        }
       }
       y += 3;
     });
