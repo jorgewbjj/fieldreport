@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+
+
+
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -18,10 +21,11 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
     import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
-    // TODO: Replace with your Firebase config
+    // ── YOUR FIREBASE CONFIG ──
  const firebaseConfig = {
   apiKey: "AIzaSyByxwR_TWiWYMe65G9AxBFgv-_oxX9MThk",
   authDomain: "fieldreport-1c1d2.firebaseapp.com",
@@ -32,8 +36,15 @@
   measurementId: "G-18DP7CSDW9"
 };
 
-    // Initialize
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
+
+    // — Anonymous Auth so writes don’t get blocked by default rules —
+    const auth = getAuth(app);
+    signInAnonymously(auth)
+      .then(() => console.log("✅ Signed in anonymously"))
+      .catch(err => console.error("❌ Auth error:", err));
+
     const db = getDatabase(app);
     const storage = getStorage(app);
 
@@ -42,8 +53,7 @@
       const addItemBtn = document.getElementById("add-item");
       const reportForm = document.getElementById("report-form");
 
-      // Add first item by default
-      addItem();
+      addItem();  // start with one
 
       addItemBtn.addEventListener("click", e => {
         e.preventDefault();
@@ -76,24 +86,22 @@
         `;
         itemsContainer.appendChild(div);
 
-        // Remove button
+        // remove
         div.querySelector(".remove-item").addEventListener("click", e => {
           e.preventDefault();
           div.remove();
-          // re-label items
           Array.from(itemsContainer.children).forEach((it, i) => {
             it.querySelector("strong").textContent = `Item #${i+1}`;
           });
         });
 
-        // Capture geolocation
+        // geolocation
         const locInput = div.querySelector('[name="item-loc"]');
         if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(pos => {
-            locInput.value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-          }, err => {
-            locInput.value = "Unable to fetch location";
-          });
+          navigator.geolocation.getCurrentPosition(
+            pos => locInput.value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`,
+            err => locInput.value = "Unable to fetch location"
+          );
         } else {
           locInput.value = "Geolocation not supported";
         }
@@ -101,50 +109,55 @@
 
       async function handleSubmit(e) {
         e.preventDefault();
-        const form = e.target;
-        // Gather metadata
-        const meta = {
-          date: form.date.value,
-          address: form.address.value,
-          store: form.store.value,
-          technician: form.technician.value,
-          createdAt: Date.now()
-        };
+        try {
+          console.log("🚀 Submitting report…");
+          const form = e.target;
+          const meta = {
+            date: form.date.value,
+            address: form.address.value,
+            store: form.store.value,
+            technician: form.technician.value,
+            createdAt: Date.now()
+          };
 
-        // Create new report node
-        const reportRef = push(ref(db, "reports"));
-        const reportId = reportRef.key;
+          // push new report
+          const reportRef = push(ref(db, "reports"));
+          console.log("Report ID:", reportRef.key);
+          await set(reportRef, meta);
+          console.log("✅ Metadata saved");
 
-        // Write metadata
-        await set(reportRef, meta);
+          const itemDivs = Array.from(itemsContainer.children);
+          for (let i = 0; i < itemDivs.length; i++) {
+            const it = itemDivs[i];
+            const name = it.querySelector('[name="item-name"]').value;
+            const loc  = it.querySelector('[name="item-loc"]').value;
+            const desc = it.querySelector('[name="item-desc"]').value;
+            const files = it.querySelector('[name="item-pics"]').files;
 
-        // Process items
-        const itemDivs = Array.from(itemsContainer.children);
-        for (let i = 0; i < itemDivs.length; i++) {
-          const it = itemDivs[i];
-          const name = it.querySelector('[name="item-name"]').value;
-          const loc = it.querySelector('[name="item-loc"]').value;
-          const desc = it.querySelector('[name="item-desc"]').value;
-          const files = it.querySelector('[name="item-pics"]').files;
+            const urls = [];
+            for (const file of files) {
+              const storageRef = sref(storage, `reports/${reportRef.key}/item-${i}/${file.name}`);
+              console.log("Uploading", file.name, "to", storageRef.fullPath);
+              await uploadBytes(storageRef, file);
+              const url = await getDownloadURL(storageRef);
+              console.log("URL:", url);
+              urls.push(url);
+            }
 
-          // Upload images
-          const urls = [];
-          for (const file of files) {
-            const storageRef = sref(storage, `reports/${reportId}/item-${i}/${file.name}`);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
-            urls.push(url);
+            const itemRef = ref(db, `reports/${reportRef.key}/items/item-${i}`);
+            await set(itemRef, { name, loc, desc, pics: urls });
+            console.log(`✅ Item ${i} saved`);
           }
 
-          // Write item
-          const itemRef = ref(db, `reports/${reportId}/items/item-${i}`);
-          await set(itemRef, { name, loc, desc, pics: urls });
-        }
+          alert("📥 Report saved!");
+          form.reset();
+          itemsContainer.innerHTML = "";
+          addItem();
 
-        alert("Report saved!");
-        form.reset();
-        itemsContainer.innerHTML = "";
-        addItem();
+        } catch (err) {
+          console.error("❌ Error saving report:", err);
+          alert("Error saving report: " + err.message);
+        }
       }
     });
   </script>
@@ -154,7 +167,7 @@
   <form id="report-form">
     <div class="metadata">
       <label>Date:
-        <input type="date" id="date" name="date" required value="" />
+        <input type="date" id="date" name="date" required />
       </label>
       <label>Address:
         <input type="text" id="address" name="address" required placeholder="123 Main St" />
