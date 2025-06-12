@@ -1,122 +1,518 @@
- 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Field Report - Minimal Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Field Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- Cropper.js CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet"/>
   <style>
-    body { margin:0; padding:0; font-family:sans-serif; background: #eef4f9;}
-    #map { width: 100vw; height: 300px; margin-bottom: 16px; }
-    .marker-number { background: #3874fa; color: #fff; border-radius: 50%; width: 32px; height: 32px; text-align: center; line-height: 32px; font-size: 17px; border: 2px solid #fff; box-shadow: 0 2px 6px #0004; font-weight: bold; }
-    .issue-card { background: #fff; margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; border: 1px solid #eef1f6; }
-    .issue-card strong { display: block; }
-    #status { color: #d00; font-size: 14px; }
-    @media (max-width: 700px) { #map {height: 160px;} }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #f1f4f9;
+      font-family: 'Inter', Arial, sans-serif;
+      color: #1a1a1a;
+      touch-action: manipulation;
+    }
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .topbar {
+      width: 100vw;
+      max-width: 100vw;
+      height: 56px;
+      background: #3874fa;
+      color: #fff;
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      padding: 0 22px;
+      box-shadow: 0 1px 10px #0002;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 20;
+    }
+    .app-container {
+      flex: 1 1 auto;
+      width: 100vw;
+      max-width: 100vw;
+      margin: 0;
+      padding: 0 0 80px 0; /* Padding for bottom buttons */
+      box-sizing: border-box;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .form-card, .issue-list {
+      width: 100vw;
+      max-width: 600px;
+      box-sizing: border-box;
+      margin: 70px auto 0 auto;
+      padding: 16px 14px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 3px 24px #0001;
+    }
+    .form-card {
+      margin-top: 72px;
+      margin-bottom: 16px;
+    }
+    #map {
+      width: 100vw;
+      max-width: 600px;
+      height: 170px;
+      border-radius: 16px;
+      margin: 0 auto 12px auto;
+      box-shadow: 0 2px 12px #0001;
+      background: #c2d1e1;
+    }
+    label { font-weight: 600; display: block; margin-top: 6px;}
+    input, textarea {
+      width: 100%;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #d7dae3;
+      margin-top: 5px;
+      padding: 10px 11px;
+      background: #f9fbfd;
+      box-sizing: border-box;
+    }
+    textarea { min-height: 48px; resize: vertical; }
+    .img-preview-group { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 8px;}
+    .img-preview { max-width: 45vw; max-height: 66px; border-radius: 12px; border: 1px solid #ccc; object-fit: cover; background: #eee;}
+    .marker-number {
+      background: #3874fa;
+      color: #fff;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      text-align: center;
+      line-height: 32px;
+      font-size: 17px;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px #0004;
+      font-weight: bold;
+    }
+    .issue-list {
+      margin: 18px auto 0 auto;
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 3px 24px #0001;
+      padding-bottom: 20px;
+    }
+    .issue-card {
+      margin-bottom: 18px;
+      background: #f4f7fd;
+      padding: 12px 10px 10px 12px;
+      border-radius: 14px;
+      border: 1px solid #e8ecf2;
+      box-shadow: 0 2px 12px #0001;
+    }
+    .issue-card strong { font-size: 17px;}
+    .issue-card small { color: #777; }
+    /* Bottom bar for buttons */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0; width: 100vw; z-index: 30;
+      background: #fff;
+      padding: 9px 0 13px 0;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      box-shadow: 0 -1px 15px #0002;
+      border-radius: 16px 16px 0 0;
+    }
+    .app-btn {
+      display: inline-block;
+      background: linear-gradient(90deg,#3974fa,#4c91fb 80%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      padding: 13px 26px;
+      font-weight: 700;
+      margin: 0 4px;
+      box-shadow: 0 1px 6px #4686ea30;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: background 0.15s;
+    }
+    .app-btn:active { background: #3974fa; }
+    .app-btn.secondary {
+      background: #eef3f9;
+      color: #3974fa;
+      border: 1px solid #c6d7f5;
+      font-weight: 600;
+    }
+    #status {
+      display: block;
+      color: #d00;
+      font-size: 15px;
+      min-height: 19px;
+      margin: 6px 0 0 0;
+    }
+    /* Modal for cropper */
+    #cropperModal {
+      position: fixed; z-index: 10000; left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.74); display: none; justify-content: center; align-items: center;
+    }
+    #cropperBox {
+      background: #fff; border-radius: 18px; box-shadow: 0 3px 26px #0006; text-align: center;
+      display: flex; flex-direction: column;
+      max-width: 99vw; max-height: 95vh; width: 98vw; height: 94vh; padding: 0; position: relative;
+    }
+    #cropperBox h3 { margin: 18px 0 10px 0; font-size: 18px; }
+    #cropperScroll { flex: 1 1 auto; overflow: auto; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; }
+    #cropperImage { max-width: 98vw; max-height: 68vh; display: block; margin: 0 auto; background: #eee; border-radius: 10px;}
+    .cropper-btns {
+      flex: none;
+      background: #fff;
+      padding: 15px 0 10px 0;
+      border-radius: 0 0 18px 18px;
+      box-shadow: 0 -2px 8px #0001;
+      display: flex;
+      justify-content: center;
+      gap: 9px;
+      position: sticky;
+      bottom: 0; left: 0;
+    }
+    .cropper-btns button { margin: 0 2vw; font-size: 17px; border-radius: 8px;}
+    @media (max-width: 700px) {
+      .topbar { font-size: 20px; height: 53px; padding-left: 10px;}
+      .form-card, .issue-list, #map { border-radius: 0; max-width: 100vw; }
+      .form-card { margin-top: 62px; }
+      .img-preview { max-width: 44vw; }
+      .img-preview-group { gap: 4px;}
+      textarea { min-height: 36px; }
+      #cropperBox { min-width: 0; }
+      #cropperImage { max-width: 98vw; }
+      .app-btn { font-size: 17px; padding: 11px 13px;}
+    }
   </style>
 </head>
 <body>
-<h2 style="margin:18px 0 5px 14px;">Field Report Demo</h2>
-<div id="map"></div>
+<div class="topbar">Field Report</div>
+<div class="app-container">
 
-<form id="issueForm" autocomplete="off" style="margin-left:14px;">
-  <label>Description:<br>
-    <input type="text" id="desc" required style="width:90%;">
-  </label>
-  <button type="button" onclick="addIssue()">Add Issue (my location)</button>
-  <button type="button" onclick="addTestIssue()">Add Issue (fixed test)</button>
-  <span id="status"></span>
-</form>
+  <div class="form-card">
+    <div id="map"></div>
+    <form id="issueForm" autocomplete="off">
+      <label>Issue Description
+        <input type="text" id="desc" required placeholder="Describe the issue...">
+      </label>
+      <label>Comments
+        <textarea id="comments" placeholder="Add any relevant comments or details (optional)"></textarea>
+      </label>
+      <label>Pictures
+        <input type="file" id="picture" accept="image/*" multiple>
+        <div class="img-preview-group" id="imgPreviewGroup"></div>
+      </label>
+      <span id="status"></span>
+    </form>
+  </div>
 
-<div id="issueList" style="margin:20px 14px;"></div>
+  <div class="issue-list" id="issueList">
+    <h2 style="margin:8px 0 16px 0; font-size: 19px;">Reported Issues</h2>
+  </div>
+</div>
 
+<!-- Bottom fixed bar -->
+<div class="bottom-bar">
+  <button class="app-btn" type="button" onclick="addIssue()">Add Issue</button>
+  <button class="app-btn secondary" type="button" onclick="generatePDF()">Download Report</button>
+</div>
+
+<!-- Modal for cropping/rotation -->
+<div id="cropperModal">
+  <div id="cropperBox">
+    <h3>Adjust Image (<span id="cropperCount"></span>)</h3>
+    <div id="cropperScroll">
+      <img id="cropperImage" alt="Cropper">
+    </div>
+    <div class="cropper-btns">
+      <button onclick="rotateCropper(-90)" type="button">⟲ Rotate Left</button>
+      <button onclick="rotateCropper(90)" type="button">⟳ Rotate Right</button>
+      <button onclick="confirmCropper()" type="button" style="background:#3874fa;color:#fff;">Confirm</button>
+      <button onclick="cancelCropper()" type="button" style="background:#ccc;color:#333;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Libraries -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
-const MAPTILER_KEY = "https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${g5EUyUQUMk4jNTFKi4Qv};"; // <-- Replace this with your MapTiler key!
+  // ----------- SET YOUR MAPTILER API KEY HERE -----------
+  const MAPTILER_KEY = "YOUR_MAPTILER_API_KEY"; // <-- REPLACE WITH YOUR KEY!
 
-let map = L.map('map').setView([-23.5505, -46.6333], 18);
+  let map = L.map('map', {zoomControl:false, attributionControl:false}).setView([0, 0], 22);
+  let markers = [];
+  let issues = [];
+  let latestImages = [];
 
-L.tileLayer(`https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${g5EUyUQUMk4jNTFKi4Qv};}`, {
-  tileSize: 256,
-  maxZoom: 22,
-  attribution: '&copy; MapTiler, OpenStreetMap contributors',
-  crossOrigin: true
-}).addTo(map);
+  // MapTiler Hybrid Satellite Layer (Best Zoom)
+  L.tileLayer(`https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`, {
+    tileSize: 256,
+    maxZoom: 22,
+    attribution: '&copy; MapTiler, OpenStreetMap contributors'
+  }).addTo(map);
 
-let issues = [];
-let markers = [];
+  function createNumberedDivIcon(number) {
+    return L.divIcon({
+      className: 'marker-number',
+      html: number,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    });
+  }
 
-function createNumberedDivIcon(number) {
-  return L.divIcon({
-    className: 'marker-number',
-    html: number,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32]
+  function setMapToUser() {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 22);
+      });
+    }
+  }
+  setMapToUser();
+
+  function resetPreview() {
+    latestImages = [];
+    document.getElementById('imgPreviewGroup').innerHTML = '';
+    document.getElementById('picture').value = '';
+  }
+
+  // MULTI-CROP & ROTATE FUNCTIONALITY:
+  let cropper = null, cropperFiles = [], cropperIndex = 0, tempImages = [];
+  document.getElementById('picture').addEventListener('change', function(e) {
+    cropperFiles = Array.from(e.target.files);
+    cropperIndex = 0;
+    tempImages = [];
+    if (!cropperFiles.length) { resetPreview(); return; }
+    startCropperProcess();
   });
-}
 
-function addIssue() {
-  const desc = document.getElementById('desc').value.trim();
-  const status = document.getElementById('status');
-  status.textContent = '';
-  if (!desc) { status.textContent = "Description required."; return; }
-  if (!("geolocation" in navigator)) { status.textContent = "Geolocation not supported."; return; }
-  status.textContent = "Getting location...";
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    status.textContent = "";
-    addIssueWithCoords(desc, pos.coords.latitude, pos.coords.longitude);
-  }, function(err){
-    status.textContent = "Location error: " + err.message;
-  }, { enableHighAccuracy: true, timeout: 8000 });
-}
+  function startCropperProcess() {
+    if (cropperIndex >= cropperFiles.length) {
+      // All images done
+      latestImages = tempImages.slice();
+      // Show previews
+      const group = document.getElementById('imgPreviewGroup');
+      group.innerHTML = '';
+      latestImages.forEach(src => {
+        let img = document.createElement('img');
+        img.className = 'img-preview';
+        img.src = src;
+        group.appendChild(img);
+      });
+      document.getElementById('cropperModal').style.display = 'none';
+      if (cropper) { cropper.destroy(); cropper = null; }
+      return;
+    }
+    const file = cropperFiles[cropperIndex];
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      document.getElementById('cropperImage').src = ev.target.result;
+      document.getElementById('cropperCount').textContent = (cropperIndex+1) + " / " + cropperFiles.length;
+      document.getElementById('cropperModal').style.display = 'flex';
+      if (cropper) { cropper.destroy(); }
+      setTimeout(() => {
+        cropper = new Cropper(document.getElementById('cropperImage'), {
+          aspectRatio: 3/2,
+          viewMode: 1,
+          autoCropArea: 1,
+          rotatable: true,
+          movable: false,
+          zoomable: false,
+          responsive: true,
+        });
+      }, 60);
+    };
+    reader.readAsDataURL(file);
+  }
 
-function addTestIssue() {
-  // São Paulo fixed location for testing
-  addIssueWithCoords(document.getElementById('desc').value.trim(), -23.5505, -46.6333);
-}
+  function rotateCropper(deg) {
+    if (cropper) cropper.rotate(deg);
+  }
+  function cancelCropper() {
+    if (cropper) { cropper.destroy(); cropper = null; }
+    document.getElementById('cropperModal').style.display = 'none';
+    resetPreview();
+  }
+  function confirmCropper() {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas({width:900, height:600, fillColor:"#fff"});
+    let dataURL = canvas.toDataURL('image/jpeg', 0.95);
+    tempImages.push(dataURL);
+    cropper.destroy(); cropper = null;
+    cropperIndex++;
+    startCropperProcess();
+  }
 
-function addIssueWithCoords(desc, lat, lng) {
-  if (!desc) return;
-  issues.push({desc, lat, lng, ts: new Date().toLocaleString()});
-  updateMarkers();
-  document.getElementById('issueForm').reset();
-  map.setView([lat, lng], 20);
-}
+  function addIssue() {
+    const desc = document.getElementById('desc').value.trim();
+    const comments = document.getElementById('comments').value.trim();
+    const status = document.getElementById('status');
+    status.textContent = '';
+    if (!desc) {
+      status.textContent = "Description required.";
+      return;
+    }
+    if (!("geolocation" in navigator)) {
+      status.textContent = "Geolocation not supported.";
+      return;
+    }
+    status.textContent = "Getting location...";
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      status.textContent = "";
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const marker = L.marker([lat, lng], {icon: createNumberedDivIcon(issues.length+1)})
+        .addTo(map)
+        .bindPopup(`<strong>#${issues.length+1}: ${desc}</strong><br>${comments ? comments : ""}<br><small>${lat.toFixed(6)}, ${lng.toFixed(6)}</small>`);
+      markers.push(marker);
+      const issue = {
+        desc, comments, lat, lng,
+        timestamp: new Date().toLocaleString(),
+        images: latestImages.slice()
+      };
+      issues.push(issue);
+      showIssues();
+      document.getElementById('issueForm').reset();
+      resetPreview();
+      map.setView([lat, lng], 22);
+    }, function(err){
+      status.textContent = "Location error: " + err.message;
+    }, { enableHighAccuracy: true, timeout: 8000 });
+  }
 
-function updateMarkers() {
-  // Remove old
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
-  // Add new
-  issues.forEach((issue, idx) => {
-    let marker = L.marker([issue.lat, issue.lng], {icon: createNumberedDivIcon(idx+1)})
-      .addTo(map)
-      .bindPopup(`<strong>#${idx+1}: ${issue.desc}</strong><br><small>${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}</small>`);
-    markers.push(marker);
-  });
-  // Update list
-  const list = document.getElementById('issueList');
-  if (!issues.length) { list.innerHTML = "<em>No issues reported yet.</em>"; return; }
-  let html = "";
-  issues.forEach((issue, i) => {
-    html += `
-      <div class="issue-card">
-        <strong>#${i+1}: ${issue.desc}</strong>
-        <small>📍 ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}<br>🕒 ${issue.ts}</small>
-      </div>
-    `;
-  });
-  list.innerHTML = html;
-}
+  function showIssues() {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    issues.forEach((issue, idx) => {
+      let marker = L.marker([issue.lat, issue.lng], {icon: createNumberedDivIcon(idx+1)})
+        .addTo(map)
+        .bindPopup(`<strong>#${idx+1}: ${issue.desc}</strong><br>${issue.comments ? issue.comments : ""}<br><small>${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}</small>`);
+      markers.push(marker);
+    });
+    const list = document.getElementById('issueList');
+    if (!issues.length) {
+      list.innerHTML = "<h2 style='margin:8px 0 16px 0; font-size:19px;'>Reported Issues</h2><em>No issues reported yet.</em>";
+      return;
+    }
+    let html = '<h2 style="margin:8px 0 16px 0; font-size:19px;">Reported Issues</h2>';
+    issues.forEach((issue, i) => {
+      html += `
+        <div class="issue-card">
+          <strong>#${i+1}: ${issue.desc}</strong>
+          ${issue.comments ? `<div><b>Comment:</b> <em>${issue.comments}</em></div>` : ""}
+          <small>📍 ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}<br>
+          🕒 ${issue.timestamp}</small><br>
+          <div class="img-preview-group">
+            ${issue.images ? issue.images.map(src => `<img src="${src}" class="img-preview" alt="Issue Image">`).join('') : ''}
+          </div>
+        </div>
+      `;
+    });
+    list.innerHTML = html;
+  }
 
-// Try geolocate and center on user at start:
-if ("geolocation" in navigator) {
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    map.setView([pos.coords.latitude, pos.coords.longitude], 20);
-  });
-}
+  async function generatePDF() {
+    if (!issues.length) {
+      alert("No issues to export!");
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation: 'portrait', unit: 'mm', format: 'a4'});
+    let y = 20;
+    pdf.setFontSize(20);
+    pdf.text("Field Report", 15, y);
+    y += 10;
+    pdf.setFontSize(14);
+    pdf.text("Reported Issues:", 15, y);
+    y += 5;
+    issues.forEach((issue, i) => {
+      if (y > 210) { pdf.addPage(); y = 15; }
+      pdf.setFontSize(12);
+      pdf.text(`#${i+1}: ${issue.desc}`, 15, y); y += 7;
+      if (issue.comments) {
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Comment: ${issue.comments}`, 18, y); y += 6;
+      }
+      pdf.text(`Location: ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}`, 18, y); y += 5;
+      pdf.text(`Date: ${issue.timestamp}`, 18, y); y += 6;
+      // Draw images 2 per row (90x60mm, landscape)
+      if (issue.images && issue.images.length) {
+        for(let idx=0; idx<issue.images.length; idx+=2) {
+          let x1 = 18, x2 = 18+92;
+          let w = 90, h = 60;
+          pdf.addImage(issue.images[idx], 'JPEG', x1, y, w, h);
+          if (idx+1 < issue.images.length) {
+            pdf.addImage(issue.images[idx+1], 'JPEG', x2, y, w, h);
+          }
+          y += h + 4;
+          if (y > 220 && (idx+2)<issue.images.length) { pdf.addPage(); y = 15; }
+        }
+      }
+      y += 3;
+    });
+
+    // MAP OVERVIEW (last page)
+    pdf.addPage();
+
+    // Ultra zoom for map: center and zoom 22, or fit bounds then zoom to 22
+    if (issues.length === 1) {
+      map.setView([issues[0].lat, issues[0].lng], 22);
+    } else if (issues.length > 1) {
+      let latlngs = issues.map(iss => [iss.lat, iss.lng]);
+      let bounds = L.latLngBounds(latlngs);
+      map.fitBounds(bounds, {maxZoom: 22});
+      setTimeout(() => {
+        // After fitBounds, zoom in to the center as much as possible
+        let center = bounds.getCenter();
+        map.setView(center, 22);
+      }, 300);
+    }
+    await new Promise(resolve => setTimeout(resolve, 900));
+    const mapNode = document.getElementById('map');
+    const scale = 3;
+    const origWidth = mapNode.offsetWidth, origHeight = mapNode.offsetHeight;
+    mapNode.style.width = (origWidth * scale) + "px";
+    mapNode.style.height = (origHeight * scale) + "px";
+    map.invalidateSize();
+    await new Promise(resolve => setTimeout(resolve, 900));
+    const mapCanvas = await html2canvas(mapNode, { useCORS: true, scale: scale });
+    const mapImgData = mapCanvas.toDataURL('image/png');
+    mapNode.style.width = origWidth + "px";
+    mapNode.style.height = origHeight + "px";
+    map.invalidateSize();
+    pdf.setFontSize(20);
+    pdf.text("Map Overview", 15, 18);
+    const mapW = 140, mapH = 45;
+    pdf.addImage(mapImgData, 'PNG', 15, 22, mapW, mapH);
+    pdf.save('field_report.pdf');
+    if (issues.length) {
+      map.setView([issues[issues.length - 1].lat, issues[issues.length - 1].lng], 22);
+    }
+  }
+
+  window.rotateCropper = rotateCropper;
+  window.cancelCropper = cancelCropper;
+  window.confirmCropper = confirmCropper;
+
+  showIssues();
 </script>
 </body>
 </html>
