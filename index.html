@@ -1,112 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Field Report Map Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Field Report</title>
   <style>
-    body { margin:0; background: #eef4f9; font-family:sans-serif;}
-    #map { width: 100vw; height: 250px; margin-bottom: 18px; }
-    #status { color: #d00; font-size:15px; }
-    .issue-card { background: #fff; margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; border: 1px solid #eef1f6; }
-    .issue-card strong { display: block; }
-    .marker-number { background: #3874fa; color: #fff; border-radius: 50%; width: 32px; height: 32px; text-align: center; line-height: 32px; font-size: 17px; border: 2px solid #fff; box-shadow: 0 2px 6px #0004; font-weight: bold; }
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
+    h1 { text-align: center; }
+    .metadata, .item { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .item { background: #fafafa; }
+    label { display: block; margin-top: 0.5rem; }
+    input, textarea, select, button { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
+    .btn-inline { width: auto; display: inline-block; margin-right: 0.5rem; }
+    .item-header { display: flex; justify-content: space-between; align-items: center; }
+    .remove-item { background: #e74c3c; color: white; border: none; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer; }
   </style>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+    import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
+
+    // TODO: Replace with your Firebase config
+ const firebaseConfig = {
+  apiKey: "AIzaSyByxwR_TWiWYMe65G9AxBFgv-_oxX9MThk",
+  authDomain: "fieldreport-1c1d2.firebaseapp.com",
+  projectId: "fieldreport-1c1d2",
+  storageBucket: "fieldreport-1c1d2.firebasestorage.app",
+  messagingSenderId: "752765269064",
+  appId: "1:752765269064:web:c31c85f245e0c29ba4947d",
+  measurementId: "G-18DP7CSDW9"
+};
+
+    // Initialize
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const itemsContainer = document.getElementById("items");
+      const addItemBtn = document.getElementById("add-item");
+      const reportForm = document.getElementById("report-form");
+
+      // Add first item by default
+      addItem();
+
+      addItemBtn.addEventListener("click", e => {
+        e.preventDefault();
+        addItem();
+      });
+
+      reportForm.addEventListener("submit", handleSubmit);
+
+      function addItem() {
+        const idx = itemsContainer.children.length;
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <div class="item-header">
+            <strong>Item #${idx + 1}</strong>
+            <button class="remove-item">Remove</button>
+          </div>
+          <label>Item Name:
+            <input type="text" name="item-name" required />
+          </label>
+          <label>Location (lat, lng):
+            <input type="text" name="item-loc" readonly placeholder="Fetching…" />
+          </label>
+          <label>Description:
+            <textarea name="item-desc" rows="2"></textarea>
+          </label>
+          <label>Pictures:
+            <input type="file" name="item-pics" accept="image/*" multiple />
+          </label>
+        `;
+        itemsContainer.appendChild(div);
+
+        // Remove button
+        div.querySelector(".remove-item").addEventListener("click", e => {
+          e.preventDefault();
+          div.remove();
+          // re-label items
+          Array.from(itemsContainer.children).forEach((it, i) => {
+            it.querySelector("strong").textContent = `Item #${i+1}`;
+          });
+        });
+
+        // Capture geolocation
+        const locInput = div.querySelector('[name="item-loc"]');
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(pos => {
+            locInput.value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+          }, err => {
+            locInput.value = "Unable to fetch location";
+          });
+        } else {
+          locInput.value = "Geolocation not supported";
+        }
+      }
+
+      async function handleSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        // Gather metadata
+        const meta = {
+          date: form.date.value,
+          address: form.address.value,
+          store: form.store.value,
+          technician: form.technician.value,
+          createdAt: Date.now()
+        };
+
+        // Create new report node
+        const reportRef = push(ref(db, "reports"));
+        const reportId = reportRef.key;
+
+        // Write metadata
+        await set(reportRef, meta);
+
+        // Process items
+        const itemDivs = Array.from(itemsContainer.children);
+        for (let i = 0; i < itemDivs.length; i++) {
+          const it = itemDivs[i];
+          const name = it.querySelector('[name="item-name"]').value;
+          const loc = it.querySelector('[name="item-loc"]').value;
+          const desc = it.querySelector('[name="item-desc"]').value;
+          const files = it.querySelector('[name="item-pics"]').files;
+
+          // Upload images
+          const urls = [];
+          for (const file of files) {
+            const storageRef = sref(storage, `reports/${reportId}/item-${i}/${file.name}`);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            urls.push(url);
+          }
+
+          // Write item
+          const itemRef = ref(db, `reports/${reportId}/items/item-${i}`);
+          await set(itemRef, { name, loc, desc, pics: urls });
+        }
+
+        alert("Report saved!");
+        form.reset();
+        itemsContainer.innerHTML = "";
+        addItem();
+      }
+    });
+  </script>
 </head>
 <body>
-<h2 style="margin:18px 0 5px 14px;">Field Report Demo</h2>
-<div id="map"></div>
-<form id="issueForm" autocomplete="off" style="margin-left:14px;">
-  <label>Description:<br>
-    <input type="text" id="desc" required style="width:90%;">
-  </label>
-  <button type="button" onclick="addIssue()">Add Issue (My Location)</button>
-  <button type="button" onclick="addTestIssue()">Add Issue (Test Location)</button>
-  <span id="status"></span>
-</form>
-<div id="issueList" style="margin:20px 14px;"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-const MAPTILER_KEY ="WI45xBKECvuaoqcFQnad"; // <-- PUT YOUR MAPTILER KEY HERE!
+  <h1>Field Report</h1>
+  <form id="report-form">
+    <div class="metadata">
+      <label>Date:
+        <input type="date" id="date" name="date" required value="" />
+      </label>
+      <label>Address:
+        <input type="text" id="address" name="address" required placeholder="123 Main St" />
+      </label>
+      <label>Store:
+        <input type="text" id="store" name="store" required placeholder="Store Name or ID" />
+      </label>
+      <label>Technician:
+        <input type="text" id="technician" name="technician" required placeholder="Technician Name" />
+      </label>
+    </div>
 
-let map = L.map('map').setView([-23.5505, -46.6333], 19);
+    <div id="items"></div>
+    <button id="add-item" class="btn-inline">+ Add Item</button>
 
-L.tileLayer(`https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${WI45xBKECvuaoqcFQnad}`, {
-  tileSize: 256,
-  maxZoom: 22,
-  attribution: '&copy; MapTiler, OpenStreetMap contributors',
-  crossOrigin: true // REQUIRED for MapTiler!
-}).addTo(map);
-
-let issues = [];
-let markers = [];
-function createNumberedDivIcon(number) {
-  return L.divIcon({
-    className: 'marker-number',
-    html: number,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32]
-  });
-}
-
-function addIssue() {
-  const desc = document.getElementById('desc').value.trim();
-  const status = document.getElementById('status');
-  status.textContent = '';
-  if (!desc) { status.textContent = "Description required."; return; }
-  if (!("geolocation" in navigator)) { status.textContent = "Geolocation not supported."; return; }
-  status.textContent = "Getting location...";
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    status.textContent = "";
-    addIssueWithCoords(desc, pos.coords.latitude, pos.coords.longitude);
-  }, function(err){
-    status.textContent = "Location error: " + err.message;
-  }, { enableHighAccuracy: true, timeout: 8000 });
-}
-
-function addTestIssue() {
-  addIssueWithCoords(document.getElementById('desc').value.trim(), -23.5505, -46.6333);
-}
-
-function addIssueWithCoords(desc, lat, lng) {
-  if (!desc) return;
-  issues.push({desc, lat, lng, ts: new Date().toLocaleString()});
-  updateMarkers();
-  document.getElementById('issueForm').reset();
-  map.setView([lat, lng], 20);
-}
-
-function updateMarkers() {
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
-  issues.forEach((issue, idx) => {
-    let marker = L.marker([issue.lat, issue.lng], {icon: createNumberedDivIcon(idx+1)})
-      .addTo(map)
-      .bindPopup(`<strong>#${idx+1}: ${issue.desc}</strong><br><small>${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}</small>`);
-    markers.push(marker);
-  });
-  // Update list
-  const list = document.getElementById('issueList');
-  if (!issues.length) { list.innerHTML = "<em>No issues reported yet.</em>"; return; }
-  let html = "";
-  issues.forEach((issue, i) => {
-    html += `
-      <div class="issue-card">
-        <strong>#${i+1}: ${issue.desc}</strong>
-        <small>📍 ${issue.lat.toFixed(6)}, ${issue.lng.toFixed(6)}<br>🕒 ${issue.ts}</small>
-      </div>
-    `;
-  });
-  list.innerHTML = html;
-}
-
-// Try geolocate and center on user at start
-if ("geolocation" in navigator) {
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    map.setView([pos.coords.latitude, pos.coords.longitude], 20);
-  });
-}
-</script>
+    <div style="text-align:center; margin-top:1rem;">
+      <button type="submit" style="padding:0.75rem 1.5rem;">Save Report</button>
+    </div>
+  </form>
 </body>
 </html>
