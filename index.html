@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Field Report - MapTiler, Crop, PDF</title>
+  <title>Field Report - MapTiler Satellite, Crop, PDF</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -86,23 +86,28 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    // -- SET YOUR MAPTILER API KEY HERE --
-    const MAPTILER_KEY = D07LNHRpX8QqmkT39Nza; // <<<<------- PASTE YOUR API KEY HERE
-    if (MAPTILER_KEY === D07LNHRpX8QqmkT39Nza) alert("Paste your MapTiler API Key in the code!");
+    // ==== SET YOUR MAPTILER API KEY HERE ====
+    const MAPTILER_KEY = 'D07LNHRpX8QqmkT39Nza'; // <-- Paste your MapTiler API key here!
+    // ========================================
+
+    if (MAPTILER_KEY === 'D07LNHRpX8QqmkT39Nza') {
+      alert("Paste your MapTiler API Key in the code (const MAPTILER_KEY = '...') for the map to work.");
+    }
 
     // MapTiler Satellite
     const satelliteLayerURL = `https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${D07LNHRpX8QqmkT39Nza}`;
     const satelliteLayerAttrib = '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a>';
 
-    // In-memory items array
     const items = [];
 
     // --- Map Setup (for adding item) ---
-    const map = L.map('map', { zoomControl:true, maxZoom:22, minZoom:1 });
-    const satelliteLayer = L.tileLayer(satelliteLayerURL, { attribution: satelliteLayerAttrib, maxZoom:22 }).addTo(map);
-    let addMarker = null;
+    let map = null, addMarker = null, satelliteLayer = null;
+    function initMainMap() {
+      if (map) { map.remove(); }
+      map = L.map('map', { zoomControl:true, maxZoom:22, minZoom:1 });
+      satelliteLayer = L.tileLayer(satelliteLayerURL, { attribution: satelliteLayerAttrib, maxZoom:22 });
+      satelliteLayer.addTo(map);
 
-    function setMapToUserLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(pos) {
           const { latitude, longitude } = pos.coords;
@@ -114,11 +119,9 @@
       } else {
         map.setView([37.7749, -122.4194], 22);
       }
+      map.on('click', function(e) { setMarker(e.latlng.lat, e.latlng.lng); });
     }
 
-    setMapToUserLocation();
-
-    map.on('click', function(e) { setMarker(e.latlng.lat, e.latlng.lng); });
     function setMarker(lat, lng) {
       if (addMarker) map.removeLayer(addMarker);
       addMarker = L.marker([lat, lng]).addTo(map);
@@ -126,15 +129,13 @@
       document.getElementById('lng').value = lng;
     }
 
+    window.onload = () => { initMainMap(); };
+
     // --- Image Modal, Crop, and Organize ---
-    let cropModalPromise = null;
     document.getElementById('itemImg').addEventListener('change', async function(e) {
       if (!this.files.length) return;
-      // Convert FileList to Array of { file, url }
       let imgFiles = Array.from(this.files).map(f => ({ file: f, url: URL.createObjectURL(f) }));
-      // Launch crop and organize modal, await finished images
-      cropModalPromise = openImageCropModal(imgFiles);
-      let croppedImages = await cropModalPromise;
+      let croppedImages = await openImageCropModal(imgFiles);
       this.value = ''; // Reset input
       this.croppedImages = croppedImages; // Attach to input for submit
     });
@@ -159,19 +160,16 @@
           </div>
         `;
         let index = 0, cropper = null;
-
-        let imgDataArr = [...imgFiles]; // [{ file, url }]
+        let imgDataArr = [...imgFiles];
         const updateThumbs = () => {
           const thumbs = imgDataArr.map((img, i) =>
             `<img src="${img.url}" class="modal-thumb${i === index ? " selected" : ""}" data-idx="${i}" />`
           ).join('');
           document.getElementById('modal-thumbs').innerHTML = thumbs;
-          // Add click to select
           [...document.querySelectorAll('.modal-thumb')].forEach(el => {
             el.onclick = () => { index = +el.dataset.idx; showImage(); };
           });
         };
-
         function showImage() {
           const img = document.getElementById('crop-img');
           img.src = imgDataArr[index].url;
@@ -179,7 +177,6 @@
           img.onload = () => { cropper = new Cropper(img, { viewMode:1, autoCropArea:1 }); };
           updateThumbs();
         }
-
         document.getElementById('btn-prev').onclick = () => { index = (index-1+imgDataArr.length)%imgDataArr.length; showImage(); };
         document.getElementById('btn-next').onclick = () => { index = (index+1)%imgDataArr.length; showImage(); };
         document.getElementById('btn-delete').onclick = () => {
@@ -189,12 +186,10 @@
           showImage();
         };
         document.getElementById('btn-finish').onclick = async () => {
-          // Crop all images, return array of data URLs
           const croppedArr = [];
           for (let i=0; i<imgDataArr.length; i++) {
-            // Show each for crop
             index = i; showImage();
-            await new Promise(res => setTimeout(res, 150));
+            await new Promise(res => setTimeout(res, 120));
             if (cropper) {
               croppedArr.push(cropper.getCroppedCanvas({ width:600, height:600 }).toDataURL("image/jpeg", 0.85));
             }
@@ -215,30 +210,26 @@
       const lat = parseFloat(document.getElementById('lat').value);
       const lng = parseFloat(document.getElementById('lng').value);
 
-      // Get cropped images from modal
       let imgDataList = imgInput.croppedImages;
       if (!imgDataList || !imgDataList.length) {
         alert('Add and crop your pictures first!');
         return;
       }
-
       if (!title || isNaN(lat) || isNaN(lng)) {
         alert('Fill all fields and select a location on the map!');
         return;
       }
-
       const item = { title, desc, imgDataList, lat, lng };
       items.push(item);
       renderItems();
 
-      // Reset
       document.getElementById('itemForm').reset();
       imgInput.croppedImages = null;
       if (addMarker) map.removeLayer(addMarker);
       addMarker = null;
       document.getElementById('lat').value = '';
       document.getElementById('lng').value = '';
-      setMapToUserLocation();
+      initMainMap();
     });
 
     // --- Render All Items List (with MapTiler mini-maps) ---
@@ -283,7 +274,7 @@
 
         // Render mini-map with marker
         setTimeout(() => {
-          const miniMap = L.map(miniMapId, {
+          let miniMap = L.map(miniMapId, {
             zoomControl: false,
             attributionControl: false,
             dragging: false,
@@ -327,18 +318,18 @@
         let mapDiv = mapDivs[idx];
         let mapImgData = null;
         if (mapDiv) {
-          await new Promise(res=>setTimeout(res, 350)); // Give map time to load
+          await new Promise(res=>setTimeout(res, 350));
           await html2canvas(mapDiv, {useCORS:true, allowTaint:true, logging:false, width: mapDiv.offsetWidth, height: mapDiv.offsetHeight}).then(canvas=>{
             mapImgData = canvas.toDataURL('image/jpeg',0.9);
             doc.addImage(mapImgData, "JPEG", 140, imgY-85, 130, 80, undefined, "FAST");
           });
         }
-
         y = imgY + 20;
         if (y > 750 || idx === items.length - 1) { if (idx !== items.length - 1) { doc.addPage(); y = 40; } }
       }
       doc.save("FieldReport.pdf");
     });
+
   </script>
 </body>
 </html>
