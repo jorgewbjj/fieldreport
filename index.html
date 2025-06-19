@@ -1,250 +1,256 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Field Report</title>
-
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha384-XQoYMqMTK8LpLeGg3DWDsGcF1Ix5r3c1xvMG0fqpbCM6B31YhG6nH0fkJQ/KWjQ1"
-    crossorigin=""
-  />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
-    h1 { text-align: center; }
-    .metadata, .item { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-    .item { background: #fafafa; }
-    label { display: block; margin-top: 0.5rem; }
-    input, textarea, button { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
-    .btn-inline { width: auto; display: inline-block; margin-right: 0.5rem; }
-    .remove-item { background: #e74c3c; color: white; border: none; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer; }
-    #status { padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; display: none; }
-    #status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    #status.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    #map { height: 400px; margin-top: 1rem; display: none; }
-    #test-conn { margin-bottom: 1rem; }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f6f8fa;
+      color: #232323;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 8px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+    .report-form {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px #0001;
+      padding: 24px;
+      margin-bottom: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: flex-start;
+    }
+    .report-form input, .report-form textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+    .report-form label {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .form-section {
+      flex: 1 1 220px;
+      min-width: 220px;
+      max-width: 350px;
+    }
+    #map {
+      width: 100%;
+      height: 260px;
+      border-radius: 14px;
+      margin-bottom: 10px;
+    }
+    .add-btn {
+      padding: 10px 22px;
+      border: none;
+      background: #2b7cff;
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1.05rem;
+      box-shadow: 0 1px 4px #2b7cff22;
+      transition: background 0.2s;
+    }
+    .add-btn:hover {
+      background: #175bb6;
+    }
+    .item-list {
+      display: grid;
+      gap: 18px;
+    }
+    .item-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 8px #0001;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-start;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .item-image {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 12px;
+      background: #eee;
+    }
+    .item-info {
+      flex: 1 1 220px;
+    }
+    .item-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .item-desc {
+      font-size: 1rem;
+      color: #444;
+      margin-bottom: 10px;
+    }
+    .mini-map {
+      width: 180px;
+      height: 110px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 600px) {
+      .report-form, .item-card {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .item-image, .mini-map {
+        width: 100%;
+        height: 140px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Field Report</h1>
-  <div id="status"></div>
-  <button id="test-conn">🔄 Test Firebase Connection</button>
+  <div class="container">
+    <h1>Field Report</h1>
+    <form id="itemForm" class="report-form">
+      <div class="form-section">
+        <label for="itemTitle">Item Title</label>
+        <input type="text" id="itemTitle" required placeholder="Title...">
+        <label for="itemDesc">Description</label>
+        <textarea id="itemDesc" rows="3" placeholder="Describe the item"></textarea>
+        <label for="itemImg">Image</label>
+        <input type="file" id="itemImg" accept="image/*" required>
+      </div>
+      <div class="form-section">
+        <label>Click on the map to select location:</label>
+        <div id="map"></div>
+        <input type="hidden" id="lat">
+        <input type="hidden" id="lng">
+      </div>
+      <div style="flex: 1 1 100%; display: flex; justify-content: flex-end;">
+        <button class="add-btn" type="submit">Add Item</button>
+      </div>
+    </form>
 
-  <form id="report-form">
-    <div class="metadata">
-      <label>Date:
-        <input type="date" id="date" name="date" required />
-      </label>
-      <label>Address:
-        <input type="text" id="address" name="address" required placeholder="123 Main St" />
-      </label>
-      <label>Store:
-        <input type="text" id="store" name="store" required placeholder="Store Name or ID" />
-      </label>
-      <label>Technician:
-        <input type="text" id="technician" name="technician" required placeholder="Technician Name" />
-      </label>
-    </div>
-
-    <div id="items"></div>
-    <button id="add-item" class="btn-inline">+ Add Item</button>
-
-    <div style="text-align:center; margin-top:1rem;">
-      <button type="submit" style="padding:0.75rem 1.5rem;">Save Report</button>
-    </div>
-  </form>
-
-  <div id="map"></div>
+    <h2 style="font-size:1.4rem; margin-bottom: 18px;">Items</h2>
+    <div class="item-list" id="itemList"></div>
+  </div>
 
   <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha384-Ho+jYkYqQbW7ASBmK63Gysly1N1Mz42M/W7p3pTcG6r4ZjHb+ph20njj7QlkIbYm"
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // In-memory items array
+    const items = [];
 
-  <!-- Firebase SDKs + App Logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
-    import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
+    // --- Map Setup (for adding item) ---
+    const map = L.map('map').setView([37.7749, -122.4194], 3); // Centered on US
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
 
-    // ─── YOUR FIREBASE CONFIG ───
- const firebaseConfig = {
-  apiKey: "AIzaSyByxwR_TWiWYMe65G9AxBFgv-_oxX9MThk",
-  authDomain: "fieldreport-1c1d2.firebaseapp.com",
-  projectId: "fieldreport-1c1d2",
-  storageBucket: "fieldreport-1c1d2.firebasestorage.app",
-  messagingSenderId: "752765269064",
-  appId: "1:752765269064:web:c31c85f245e0c29ba4947d",
-  measurementId: "G-18DP7CSDW9"
-};
-
-    // initialize
-    const app     = initializeApp(firebaseConfig);
-    const auth    = getAuth(app);
-    const db      = getDatabase(app);
-    const storage = getStorage(app);
-
-    const statusDiv = document.getElementById("status");
-    const testBtn   = document.getElementById("test-conn");
-
-    // helper to show status
-    function showStatus(msg, isError = false) {
-      statusDiv.textContent = msg;
-      statusDiv.className = isError ? "error" : "success";
-      statusDiv.style.display = "block";
-    }
-
-    // Diagnostic write
-    async function testWrite() {
-      try {
-        const diagRef = ref(db, "diagnostics/testConnection");
-        await set(diagRef, { timestamp: Date.now() });
-        console.log("✅ Diagnostic write succeeded");
-        showStatus("✅ Firebase connection OK (check ‘diagnostics/testConnection’ in console)", false);
-      } catch (err) {
-        console.error("❌ Diagnostic write failed", err);
-        showStatus("❌ Firebase connection FAILED: " + err.message, true);
-      }
-    }
-
-    // sign in & auto-test
-    signInAnonymously(auth)
-      .then(() => {
-        console.log("✅ Signed in anonymously");
-        testWrite();
-      })
-      .catch(err => {
-        console.error("❌ Auth error", err);
-        showStatus("❌ Auth error: " + err.message, true);
-      });
-
-    testBtn.addEventListener("click", e => {
-      e.preventDefault();
-      testWrite();
+    let addMarker = null;
+    map.on('click', function(e) {
+      if (addMarker) map.removeLayer(addMarker);
+      addMarker = L.marker(e.latlng).addTo(map);
+      document.getElementById('lat').value = e.latlng.lat;
+      document.getElementById('lng').value = e.latlng.lng;
     });
 
-    // ── Rest of your report code ──
-    const itemsContainer = document.getElementById("items");
-    const addItemBtn     = document.getElementById("add-item");
-    const reportForm     = document.getElementById("report-form");
-    const mapDiv         = document.getElementById("map");
-
-    document.addEventListener("DOMContentLoaded", () => addItem());
-    addItemBtn.addEventListener("click", e => { e.preventDefault(); addItem(); });
-    reportForm.addEventListener("submit", handleSubmit);
-
-    function addItem() {
-      const idx = itemsContainer.children.length;
-      const div = document.createElement("div");
-      div.className = "item";
-      div.innerHTML = `
-        <div class="item-header">
-          <strong>Item #${idx+1}</strong>
-          <button class="remove-item">Remove</button>
-        </div>
-        <label>Item Name:<input type="text" name="item-name" required/></label>
-        <label>Location:<input type="text" name="item-loc" readonly placeholder="Fetching…"/></label>
-        <label>Description:<textarea name="item-desc" rows="2"></textarea></label>
-        <label>Pictures:<input type="file" name="item-pics" accept="image/*" multiple/></label>
-      `;
-      itemsContainer.appendChild(div);
-
-      div.querySelector(".remove-item").onclick = ev => {
-        ev.preventDefault();
-        div.remove();
-        [...itemsContainer.children].forEach((c,i)=>c.querySelector("strong").textContent=`Item #${i+1}`);
-      };
-
-      const locInput = div.querySelector('[name="item-loc"]');
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          p=>locInput.value=`${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`,
-          ()=>locInput.value="Unable to fetch location"
-        );
-      } else {
-        locInput.value="Geolocation not supported";
-      }
-    }
-
-    async function handleSubmit(e) {
+    // --- Handle Item Form Submit ---
+    document.getElementById('itemForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      statusDiv.style.display = "none";
-      mapDiv.style.display    = "none";
-      try {
-        console.log("🚀 Submitting report…");
-        const f = e.target;
-        const meta = {
-          date:       f.date.value,
-          address:    f.address.value,
-          store:      f.store.value,
-          technician: f.technician.value,
-          createdAt:  Date.now()
-        };
+      const title = document.getElementById('itemTitle').value.trim();
+      const desc = document.getElementById('itemDesc').value.trim();
+      const imgInput = document.getElementById('itemImg');
+      const lat = parseFloat(document.getElementById('lat').value);
+      const lng = parseFloat(document.getElementById('lng').value);
 
-        // create report
-        const rRef = push(ref(db, "reports"));
-        await set(rRef, meta);
-        console.log("✅ Metadata saved");
-
-        const locs = [];
-        const items = [...itemsContainer.children];
-        for (let i=0; i<items.length; i++) {
-          const it   = items[i];
-          const name = it.querySelector('[name="item-name"]').value;
-          const locS = it.querySelector('[name="item-loc"]').value;
-          const desc = it.querySelector('[name="item-desc"]').value;
-          const files= it.querySelector('[name="item-pics"]').files;
-
-          const [lat,lng] = locS.split(",").map(s=>parseFloat(s));
-          if (!isNaN(lat)&&!isNaN(lng)) locs.push({lat,lng,idx:i+1});
-
-          const urls = [];
-          for (const file of files) {
-            const sRef = sref(storage, `reports/${rRef.key}/item-${i}/${file.name}`);
-            await uploadBytes(sRef, file);
-            urls.push(await getDownloadURL(sRef));
-            console.log(`Uploaded ${file.name}`);
-          }
-          await set(ref(db,`reports/${rRef.key}/items/item-${i}`), {name,loc:locS,desc,pics:urls});
-          console.log(`✅ Item ${i+1} saved`);
-        }
-
-        showStatus("✅ Report saved successfully!", false);
-        renderMap(locs);
-        reportForm.reset();
-        itemsContainer.innerHTML="";
-        addItem();
-
-      } catch(err) {
-        console.error("❌ Save error:", err);
-        showStatus("❌ Failed to save report: "+err.message, true);
+      if (!title || isNaN(lat) || isNaN(lng) || !imgInput.files[0]) {
+        alert('Fill all fields and select a location on the map!');
+        return;
       }
-    }
 
-    function renderMap(locs) {
-      if (!locs.length) return;
-      mapDiv.style.display = "block";
-      const map = L.map("map").setView([locs[0].lat, locs[0].lng], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:'&copy; OpenStreetMap contributors'
-      }).addTo(map);
-      locs.forEach(({lat,lng,idx}) => {
-        const icon = L.divIcon({
-          className: "item-marker",
-          html: `<div style="background:#2A9DF4;color:white;border-radius:50%;width:24px;height:24px;line-height:24px;text-align:center;font-weight:bold;">${idx}</div>`,
-          iconSize:[24,24]
-        });
-        L.marker([lat,lng],{icon}).addTo(map).bindPopup(`Item #${idx}`);
+      // Read image as data URL for preview
+      const imgData = await new Promise(res => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result);
+        reader.readAsDataURL(imgInput.files[0]);
+      });
+
+      const item = { title, desc, imgData, lat, lng };
+      items.push(item);
+      renderItems();
+
+      // Reset form and marker
+      document.getElementById('itemForm').reset();
+      if (addMarker) map.removeLayer(addMarker);
+      addMarker = null;
+      document.getElementById('lat').value = '';
+      document.getElementById('lng').value = '';
+    });
+
+    // --- Render All Items List ---
+    function renderItems() {
+      const list = document.getElementById('itemList');
+      list.innerHTML = '';
+      items.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+
+        const img = document.createElement('img');
+        img.className = 'item-image';
+        img.src = item.imgData;
+        card.appendChild(img);
+
+        const info = document.createElement('div');
+        info.className = 'item-info';
+        info.innerHTML = `
+          <div class="item-title">${item.title}</div>
+          <div class="item-desc">${item.desc || ''}</div>
+        `;
+        card.appendChild(info);
+
+        // Small map
+        const miniMapDiv = document.createElement('div');
+        miniMapDiv.className = 'mini-map';
+        miniMapDiv.id = 'miniMap_' + idx;
+        card.appendChild(miniMapDiv);
+
+        list.appendChild(card);
+
+        // Render mini-map with marker
+        setTimeout(() => {
+          const miniMap = L.map(miniMapDiv.id, {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+            boxZoom: false,
+            keyboard: false,
+            tap: false
+          }).setView([item.lat, item.lng], 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+          L.marker([item.lat, item.lng]).addTo(miniMap);
+        }, 50);
       });
     }
   </script>
