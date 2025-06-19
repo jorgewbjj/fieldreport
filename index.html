@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Field Report</title>
+  <title>Field Report - Satellite Only</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Leaflet CSS for Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -36,7 +36,7 @@
       gap: 18px;
       align-items: flex-start;
     }
-    .report-form input, .report-form textarea, .report-form select {
+    .report-form input, .report-form textarea {
       width: 100%;
       padding: 10px;
       border-radius: 8px;
@@ -125,17 +125,12 @@
         height: 140px;
       }
     }
-    .layer-select {
-      width: 100%;
-      margin-bottom: 12px;
-      font-size: 1rem;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Field Report</h1>
-    <form id="itemForm" class="report-form">
+    <form id="itemForm" class="report-form" autocomplete="off">
       <div class="form-section">
         <label for="itemTitle">Item Title</label>
         <input type="text" id="itemTitle" required placeholder="Title...">
@@ -145,11 +140,6 @@
         <input type="file" id="itemImg" accept="image/*" required>
       </div>
       <div class="form-section">
-        <label for="layerSelect">Map Type</label>
-        <select id="layerSelect" class="layer-select">
-          <option value="default" selected>Default</option>
-          <option value="satellite">Satellite</option>
-        </select>
         <label>Click on the map to select location:</label>
         <div id="map"></div>
         <input type="hidden" id="lat">
@@ -166,24 +156,19 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- Esri Satellite Tiles -->
-  <script src="https://unpkg.com/esri-leaflet"></script>
   <script>
     // In-memory items array
     const items = [];
 
-    // Map Layers
-    const defaultLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
-    });
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
-    });
+    // Satellite Layer
+    const satelliteLayerURL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    const satelliteLayerAttrib = 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
 
     // --- Map Setup (for adding item) ---
     const map = L.map('map', { zoomControl: true });
-    let currentLayer = defaultLayer;
-    defaultLayer.addTo(map);
+    const satelliteLayer = L.tileLayer(satelliteLayerURL, {
+      attribution: satelliteLayerAttrib
+    }).addTo(map);
 
     let addMarker = null;
 
@@ -212,17 +197,6 @@
       document.getElementById('lat').value = lat;
       document.getElementById('lng').value = lng;
     }
-
-    // --- Layer Switch ---
-    document.getElementById('layerSelect').addEventListener('change', function() {
-      map.removeLayer(currentLayer);
-      if (this.value === 'satellite') {
-        currentLayer = satelliteLayer;
-      } else {
-        currentLayer = defaultLayer;
-      }
-      currentLayer.addTo(map);
-    });
 
     // --- Handle Item Form Submit ---
     document.getElementById('itemForm').addEventListener('submit', async function(e) {
@@ -289,14 +263,16 @@
         // Small map
         const miniMapDiv = document.createElement('div');
         miniMapDiv.className = 'mini-map';
-        miniMapDiv.id = 'miniMap_' + idx;
+        // Ensure unique ID
+        const miniMapId = 'miniMap_' + Date.now() + '_' + Math.random();
+        miniMapDiv.id = miniMapId;
         card.appendChild(miniMapDiv);
 
         list.appendChild(card);
 
-        // Render mini-map with marker
+        // Render mini-map with marker (after div is added to DOM)
         setTimeout(() => {
-          const miniMap = L.map(miniMapDiv.id, {
+          const miniMap = L.map(miniMapId, {
             zoomControl: false,
             attributionControl: false,
             dragging: false,
@@ -304,10 +280,12 @@
             doubleClickZoom: false,
             boxZoom: false,
             keyboard: false,
-            tap: false
+            tap: false,
+            closePopupOnClick: false,
+            // Fix for Leaflet "container already initialized" bug
+            preferCanvas: true
           }).setView([item.lat, item.lng], 13);
-          // Always use same layer as main map for now
-          (document.getElementById('layerSelect').value === 'satellite' ? satelliteLayer : defaultLayer).addTo(miniMap);
+          L.tileLayer(satelliteLayerURL, { attribution: '' }).addTo(miniMap);
           L.marker([item.lat, item.lng]).addTo(miniMap);
         }, 50);
       });
