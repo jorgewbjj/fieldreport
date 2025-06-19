@@ -36,7 +36,7 @@
       gap: 18px;
       align-items: flex-start;
     }
-    .report-form input, .report-form textarea {
+    .report-form input, .report-form textarea, .report-form select {
       width: 100%;
       padding: 10px;
       border-radius: 8px;
@@ -125,6 +125,11 @@
         height: 140px;
       }
     }
+    .layer-select {
+      width: 100%;
+      margin-bottom: 12px;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -140,6 +145,11 @@
         <input type="file" id="itemImg" accept="image/*" required>
       </div>
       <div class="form-section">
+        <label for="layerSelect">Map Type</label>
+        <select id="layerSelect" class="layer-select">
+          <option value="default" selected>Default</option>
+          <option value="satellite">Satellite</option>
+        </select>
         <label>Click on the map to select location:</label>
         <div id="map"></div>
         <input type="hidden" id="lat">
@@ -156,22 +166,62 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Esri Satellite Tiles -->
+  <script src="https://unpkg.com/esri-leaflet"></script>
   <script>
     // In-memory items array
     const items = [];
 
-    // --- Map Setup (for adding item) ---
-    const map = L.map('map').setView([37.7749, -122.4194], 3); // Centered on US
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Map Layers
+    const defaultLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+    });
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
+    });
+
+    // --- Map Setup (for adding item) ---
+    const map = L.map('map', { zoomControl: true });
+    let currentLayer = defaultLayer;
+    defaultLayer.addTo(map);
 
     let addMarker = null;
+
+    // Try Geolocation first
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        const { latitude, longitude } = pos.coords;
+        map.setView([latitude, longitude], 15);
+        setMarker(latitude, longitude);
+      }, function() {
+        // On denied, fallback to default
+        map.setView([37.7749, -122.4194], 3);
+      });
+    } else {
+      map.setView([37.7749, -122.4194], 3);
+    }
+
+    // Click to choose location
     map.on('click', function(e) {
+      setMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    function setMarker(lat, lng) {
       if (addMarker) map.removeLayer(addMarker);
-      addMarker = L.marker(e.latlng).addTo(map);
-      document.getElementById('lat').value = e.latlng.lat;
-      document.getElementById('lng').value = e.latlng.lng;
+      addMarker = L.marker([lat, lng]).addTo(map);
+      document.getElementById('lat').value = lat;
+      document.getElementById('lng').value = lng;
+    }
+
+    // --- Layer Switch ---
+    document.getElementById('layerSelect').addEventListener('change', function() {
+      map.removeLayer(currentLayer);
+      if (this.value === 'satellite') {
+        currentLayer = satelliteLayer;
+      } else {
+        currentLayer = defaultLayer;
+      }
+      currentLayer.addTo(map);
     });
 
     // --- Handle Item Form Submit ---
@@ -205,6 +255,14 @@
       addMarker = null;
       document.getElementById('lat').value = '';
       document.getElementById('lng').value = '';
+
+      // Optionally, re-center on user for next entry (optional, can remove)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          const { latitude, longitude } = pos.coords;
+          map.setView([latitude, longitude], 15);
+        });
+      }
     });
 
     // --- Render All Items List ---
@@ -248,7 +306,8 @@
             keyboard: false,
             tap: false
           }).setView([item.lat, item.lng], 13);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+          // Always use same layer as main map for now
+          (document.getElementById('layerSelect').value === 'satellite' ? satelliteLayer : defaultLayer).addTo(miniMap);
           L.marker([item.lat, item.lng]).addTo(miniMap);
         }, 50);
       });
