@@ -115,7 +115,7 @@
     #addTechPrompt input { width: auto; flex: 2 1 80px;}
     /* Hidden map for PDF */
     #allItemsMapForPDF {
-      width: 700px;
+      width: 830px;
       height: 350px;
       position: absolute;
       top: -10000px;
@@ -340,7 +340,8 @@
     // --- PDF generation with all-item map at the end ---
     document.getElementById('generatePDF').onclick = async function() {
       const jsPDF = window.jspdf.jsPDF;
-      const pdf = new jsPDF({ unit: 'px', format: 'a4' });
+      // PDF is landscape for better map display at the end!
+      const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
       let y = 30;
       const address = document.getElementById('address').value;
       const date = document.getElementById('date').value;
@@ -383,29 +384,34 @@
         y += 16;
         pdf.text(`Location: ${coord}`, 40, y);
 
-        // Pictures
+        // Pictures (show larger, two per row)
         if (images.length) {
-          y += 12;
-          let ximg = 40;
+          y += 10;
+          let ximg = 40, imgInRow = 0;
           for (let j = 0; j < images.length; j++) {
             const imgFile = images[j];
             if (imgFile && imgFile.type.startsWith('image/')) {
               try {
                 const dataUrl = await fileToDataURL(imgFile);
-                pdf.addImage(dataUrl, 'JPEG', ximg, y, 60, 48);
-                ximg += 65;
+                pdf.addImage(dataUrl, 'JPEG', ximg, y, 120, 96);
+                ximg += 130;
+                imgInRow++;
+                if (imgInRow === 2) {
+                  ximg = 40;
+                  y += 100;
+                  imgInRow = 0;
+                }
               } catch (e) {}
             }
           }
-          y += 54;
+          if (imgInRow > 0) y += 100;
         }
         y += 6;
         if (y > 760) { pdf.addPage(); y = 30; }
       }
 
-      // --- All-items map at the end ---
+      // --- All-items map at the end (landscape, centered, higher zoom) ---
       if (locations.length > 0) {
-        // Generate and capture map
         await generateAllItemsMapPDF(locations, pdf);
       }
 
@@ -438,10 +444,10 @@
         avgLat /= locations.length;
         avgLng /= locations.length;
 
-        // Create map
+        // Create map (now with zoom: 17 for more detail)
         const map = L.map('allItemsMapForPDF', {
           center: [avgLat, avgLng],
-          zoom: 15,
+          zoom: 17,
           zoomControl: false,
           attributionControl: false,
           dragging: false,
@@ -475,14 +481,19 @@
             // Clean up map
             map.remove();
             mapDiv.style.display = "none";
-            // Add to PDF (new page)
-            pdf.addPage();
-            pdf.setFontSize(16);
-            pdf.text('All Item Locations', 30, 32);
-            pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), 'JPEG', 30, 50, 530, 265);
+            // PDF: Add a landscape page, center map and title
+            pdf.addPage("a4", "landscape");
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            // Center title
+            pdf.setFontSize(18);
+            pdf.text('All Item Locations', pageWidth/2, 40, {align:'center'});
+            // Center image (size: 700x350 px in a4 landscape)
+            const imgWidth = 700, imgHeight = 350;
+            const imgX = (pageWidth-imgWidth)/2;
+            pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), 'JPEG', imgX, 60, imgWidth, imgHeight);
             resolve();
           });
-        }, 1000); // Give tiles and markers time to load
+        }, 1200); // Give tiles and markers time to load
       });
     }
 
