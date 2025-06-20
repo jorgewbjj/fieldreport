@@ -1,294 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Field Report</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Leaflet & Cropper CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- MapTiler & Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body { font-family:sans-serif; background:#f6f8fa; color:#232323;}
-    .container { max-width:960px; margin:0 auto; padding:24px 8px; }
-    h1 { text-align:center; font-size:2rem; margin-bottom:20px; }
-    label { font-weight:600; }
-    .main-form, .item-form { background:#fff; border-radius:14px; box-shadow:0 2px 10px #0001; padding:18px 18px 6px 18px; margin-bottom:26px;}
-    .main-fields { display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px;}
-    .main-fields > div { display:flex; flex-direction:column; gap:4px;}
-    @media (max-width:800px){ .main-fields {grid-template-columns:1fr 1fr;} }
-    @media (max-width:500px){ .main-fields {grid-template-columns:1fr;} }
-    input, select, textarea { padding:7px 10px; border-radius:7px; border:1px solid #ccc; font-size:1rem;}
-    textarea { resize:vertical; }
-    .item-form { margin-top:30px;}
-    .item-row { display:flex; flex-wrap:wrap; gap:20px;}
-    .item-form label {margin-top:8px;}
-    .mapdiv { width:220px; height:160px; border-radius:12px; margin-top:8px;}
-    .thumb-row { display:flex; gap:8px; margin-top:7px; }
-    .thumb-preview { width:56px; height:56px; object-fit:cover; border-radius:6px; border:2px solid #2b7cff;}
-    .item-list { margin-top:26px; }
-    .item-card { background:#fff; border-radius:14px; box-shadow:0 1px 8px #0001; display:flex; flex-wrap:wrap; gap:18px; padding:14px; margin-bottom:16px;}
-    .item-info { flex:1 1 210px; min-width:150px;}
-    .item-map { width:150px; height:105px; border-radius:8px; margin:8px 0 0 0;}
-    .btn, .add-btn { padding:8px 20px; border:none; background:#2b7cff; color:#fff; border-radius:7px; font-weight:600; font-size:1rem; margin:8px 8px 8px 0; cursor:pointer;}
-    .btn:disabled {background:#bbb;}
-    .add-btn {background:#26b445;}
-    .modal-bg { position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; z-index:1000;}
-    .modal-content { background:#fff; padding:18px; border-radius:12px; max-width:92vw; max-height:90vh; display:flex; flex-direction:column; align-items:center;}
-    .crop-img-preview { max-width:330px; max-height:60vh; border-radius:10px; box-shadow:0 1px 6px #0002; margin-bottom:16px;}
-    .modal-btn { padding:7px 18px; background:#2b7cff; color:#fff; border-radius:7px; border:none; cursor:pointer; font-size:1rem; margin: 2px;}
-    .modal-btn.rotate { background:#8d2cff;}
-    .modal-btn.done { background:#26b445;}
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f7f9fb;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 28px 20px;
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #20243a;
+    }
+    .field-row {
+      display: flex;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    label {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+      display: block;
+    }
+    input, select, button, textarea {
+      padding: 10px;
+      border: 1px solid #dde3ed;
+      border-radius: 8px;
+      font-size: 1rem;
+      width: 100%;
+      margin-top: 2px;
+    }
+    input[type="date"] { max-width: 170px;}
+    select { max-width: 200px; }
+    button, .add-btn, .remove-btn {
+      cursor: pointer;
+      border: none;
+      color: #fff;
+      background: #377dff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    button:hover, .add-btn:hover, .remove-btn:hover { background: #225ec9; }
+    .add-btn, .remove-btn {
+      background: #31b86a;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      padding: 5px 12px;
+    }
+    .remove-btn { background: #e44; margin-left: 14px; }
+    .item-section {
+      background: #f3f7fa;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 22px;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .item-section h4 { margin-top: 0; margin-bottom: 10px; }
+    .pictures-preview {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .pictures-preview img {
+      max-width: 92px;
+      max-height: 80px;
+      border-radius: 7px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.09);
+      object-fit: cover;
+    }
+    .map-container {
+      width: 100%;
+      height: 220px;
+      margin-top: 7px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    @media (max-width: 700px) {
+      .container { max-width: 98vw; padding: 8vw 2vw; }
+      .map-container { height: 160px; }
+    }
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>Field Report</h1>
-  <!-- Main form -->
-  <form id="mainForm" class="main-form" autocomplete="off">
-    <div class="main-fields">
-      <div>
-        <label>Address</label>
-        <input type="text" id="address" required>
-      </div>
-      <div>
-        <label>Technician</label>
-        <div style="display:flex; gap:6px;">
-          <select id="technician" style="flex:1">
-            <option>Arister</option>
-            <option>David</option>
-            <option>Elias</option>
-            <option value="add_new">+ Add new</option>
-          </select>
-          <input type="text" id="newTechnician" style="display:none;flex:1" placeholder="New technician...">
+  <div class="container">
+    <h2>Field Report</h2>
+    <form id="reportForm" autocomplete="off">
+      <div class="field-row">
+        <div style="flex:1 1 200px">
+          <label for="address">Address</label>
+          <input type="text" id="address" name="address" required placeholder="Enter address" />
+        </div>
+        <div style="flex:1 1 150px">
+          <label for="date">Date</label>
+          <input type="date" id="date" name="date" required />
         </div>
       </div>
-      <div>
-        <label>Date</label>
-        <input type="date" id="date" required>
+      <div class="field-row">
+        <div style="flex:1 1 180px">
+          <label for="technician">Technician</label>
+          <div style="display: flex; gap:8px;">
+            <select id="technician" name="technician" required>
+              <option value="">Select...</option>
+              <option value="Arister">Arister</option>
+              <option value="David">David</option>
+              <option value="Elias">Elias</option>
+              <option value="Wilman">Wilman</option>
+            </select>
+            <input type="text" id="addTechInput" placeholder="Add technician" style="flex:2 1 100px;"/>
+            <button type="button" id="addTechBtn" style="background:#6a4cff;">Add</button>
+          </div>
+        </div>
+        <div style="flex:1 1 180px">
+          <label for="store">Store</label>
+          <input type="text" id="store" name="store" required />
+        </div>
+        <div style="flex:1 1 140px">
+          <label for="storeNum">Store Number</label>
+          <input type="text" id="storeNum" name="storeNum" required />
+        </div>
       </div>
-      <div>
-        <label>Store Name</label>
-        <input type="text" id="storeName" required>
+
+      <hr style="margin:30px 0 20px 0; border:none; border-top:1.5px solid #e5e8ef;" />
+
+      <h3 style="margin-bottom:0;">Items</h3>
+      <div id="itemsContainer"></div>
+      <button type="button" class="add-btn" onclick="addItem()">+ Add Item</button>
+
+      <div style="margin-top:30px;">
+        <button type="submit">Submit Report</button>
       </div>
-      <div>
-        <label>Store Number</label>
-        <input type="text" id="storeNumber" required>
-      </div>
-    </div>
-  </form>
+    </form>
+  </div>
 
-  <!-- Item add form -->
-  <form id="itemForm" class="item-form">
-    <div class="item-row">
-      <div style="flex:2;min-width:180px;">
-        <label>Item Description</label>
-        <textarea id="itemDesc" rows="2" required></textarea>
-        <label>Pictures (one or more)</label>
-        <input type="file" id="itemImg" accept="image/*" multiple required>
-        <div class="thumb-row" id="thumbRow"></div>
-      </div>
-      <div>
-        <label>Location (click on the map)</label>
-        <div id="itemMap" class="mapdiv"></div>
-        <input type="hidden" id="itemLat">
-        <input type="hidden" id="itemLng">
-      </div>
-    </div>
-    <button class="add-btn" id="addItemBtn" type="submit" disabled>Add Item</button>
-  </form>
+  <!-- Leaflet & MapTiler JS -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Set today as default date
+    document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
 
-  <!-- Items list -->
-  <div class="item-list" id="itemList"></div>
-</div>
-<div id="modal-root" style="display:none"></div>
-
-<!-- Libraries -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-
-<script>
-const MAPTILER_KEY = 'D07LNHRpX8QqmkT39Nza';
-const satelliteLayerURL = `https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`;
-const satelliteLayerAttrib = '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a>';
-let technicians = ['Arister', 'David', 'Elias'];
-let items = [];
-let currentCroppedImages = [];
-let itemLatLng = null;
-
-// --- Technician dropdown (add new)
-const techSel = document.getElementById('technician');
-const newTechInput = document.getElementById('newTechnician');
-techSel.onchange = function() {
-  if(this.value==='add_new'){
-    newTechInput.style.display='block';
-    newTechInput.focus();
-    this.style.display='none';
-  }
-};
-newTechInput.onblur = function(){
-  if(this.value.trim()){
-    let name = this.value.trim();
-    technicians.push(name);
-    let opt = document.createElement('option');
-    opt.textContent = name; opt.value = name;
-    techSel.insertBefore(opt, techSel.lastElementChild); // before +Add new
-    techSel.value = name;
-  }
-  newTechInput.style.display='none';
-  techSel.style.display='block';
-};
-
-// --- Date default today
-document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
-// --- Item Map for location selection
-let itemMap, itemMarker;
-function initItemMap() {
-  if (itemMap) { itemMap.remove(); }
-  itemMap = L.map('itemMap', { zoomControl:true, maxZoom:20, minZoom:1 });
-  let tile = L.tileLayer(satelliteLayerURL, { attribution: satelliteLayerAttrib, maxZoom:20 });
-  tile.addTo(itemMap);
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      const { latitude, longitude } = pos.coords;
-      itemMap.setView([latitude, longitude], 20);
-      setItemMarker(latitude, longitude);
-    }, function() {
-      itemMap.setView([37.7749, -122.4194], 20);
-    });
-  } else {
-    itemMap.setView([37.7749, -122.4194], 20);
-  }
-  itemMap.on('click', function(e) { setItemMarker(e.latlng.lat, e.latlng.lng); });
-}
-function setItemMarker(lat, lng) {
-  if (itemMarker) itemMap.removeLayer(itemMarker);
-  itemMarker = L.marker([lat, lng]).addTo(itemMap);
-  itemLatLng = {lat, lng};
-  document.getElementById('itemLat').value = lat;
-  document.getElementById('itemLng').value = lng;
-  updateAddItemBtnState();
-}
-initItemMap();
-
-// --- Item images (crop, rotate)
-document.getElementById('itemImg').addEventListener('change', async function() {
-  if (!this.files.length) return;
-  let files = Array.from(this.files);
-  let croppedArr = [];
-  for (let i=0; i<files.length; i++) {
-    let cropped = await cropOneImage(files[i]);
-    if (!cropped) break;
-    croppedArr.push(cropped);
-  }
-  this.value = '';
-  currentCroppedImages = croppedArr;
-  showThumbs(croppedArr);
-  updateAddItemBtnState();
-});
-function showThumbs(arr) {
-  const thumbRow = document.getElementById('thumbRow');
-  thumbRow.innerHTML = arr.map(img=>`<img src="${img}" class="thumb-preview">`).join('');
-}
-function cropOneImage(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      openCropModal(evt.target.result, resolve);
+    // Add technician feature
+    document.getElementById('addTechBtn').onclick = function() {
+      const input = document.getElementById('addTechInput');
+      const val = input.value.trim();
+      if (val) {
+        const select = document.getElementById('technician');
+        let exists = false;
+        for (let opt of select.options) if (opt.value.toLowerCase() === val.toLowerCase()) exists = true;
+        if (!exists) {
+          const newOpt = document.createElement('option');
+          newOpt.value = val;
+          newOpt.textContent = val;
+          select.appendChild(newOpt);
+          select.value = val;
+          input.value = '';
+        } else {
+          select.value = val;
+        }
+      }
     };
-    reader.readAsDataURL(file);
-  });
-}
-function openCropModal(url, callback) {
-  const modalRoot = document.getElementById('modal-root');
-  modalRoot.style.display = 'flex';
-  modalRoot.innerHTML = `
-    <div class="modal-bg">
-      <div class="modal-content">
-        <img id="crop-img" class="crop-img-preview"/>
-        <div class="modal-controls">
-          <button class="modal-btn rotate" id="btn-rot-left">&#8634; Left</button>
-          <button class="modal-btn rotate" id="btn-rot-right">&#8635; Right</button>
-          <button class="modal-btn done" id="btn-save">Crop & Save</button>
-          <button class="modal-btn" id="btn-cancel">Cancel</button>
-        </div>
-      </div>
-    </div>
-  `;
-  let cropper;
-  const img = document.getElementById('crop-img');
-  img.src = url;
-  img.onload = function() {
-    cropper = new Cropper(img, { viewMode:1, autoCropArea:1, rotatable:true });
-  };
-  document.getElementById('btn-rot-left').onclick = () => { if (cropper) cropper.rotate(-90); };
-  document.getElementById('btn-rot-right').onclick = () => { if (cropper) cropper.rotate(90); };
-  document.getElementById('btn-save').onclick = () => {
-    if (cropper) {
-      let dataUrl = cropper.getCroppedCanvas({ width:600, height:600 }).toDataURL("image/jpeg", 0.87);
-      modalRoot.style.display = 'none';
-      callback(dataUrl);
-    }
-  };
-  document.getElementById('btn-cancel').onclick = () => {
-    modalRoot.style.display = 'none';
-    callback(null);
-  };
-}
-function updateAddItemBtnState() {
-  const desc = document.getElementById('itemDesc').value.trim();
-  document.getElementById('addItemBtn').disabled = !desc || !currentCroppedImages.length || !itemLatLng;
-}
-document.getElementById('itemDesc').addEventListener('input', updateAddItemBtnState);
 
-// --- Add item (store in array, render list)
-document.getElementById('itemForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const desc = document.getElementById('itemDesc').value.trim();
-  if (!desc || !currentCroppedImages.length || !itemLatLng) return;
-  items.push({
-    desc,
-    imgDataList: currentCroppedImages,
-    lat: itemLatLng.lat,
-    lng: itemLatLng.lng
-  });
-  currentCroppedImages = [];
-  itemLatLng = null;
-  document.getElementById('itemForm').reset();
-  showThumbs([]);
-  updateAddItemBtnState();
-  initItemMap();
-  renderItems();
-});
-function renderItems() {
-  const list = document.getElementById('itemList');
-  list.innerHTML = '';
-  items.forEach((item, idx) => {
-    const card = document.createElement('div');
-    card.className = 'item-card';
-    const info = document.createElement('div');
-    info.className = 'item-info';
-    info.innerHTML = `<div><b>Description:</b> ${item.desc}</div>
-      <div style="margin:5px 0 8px 0;">${item.imgDataList.map(img=>`<img src="${img}" class="thumb-preview">`).join('')}</div>
-      <div style="font-size:0.95em;color:#555;">Lat: ${item.lat.toFixed(6)}, Lng: ${item.lng.toFixed(6)}</div>`;
-    card.appendChild(info);
-    // Mini map
-    const miniMapDiv = document.createElement('div');
-    miniMapDiv.className = 'item-map';
-    const miniMapId = 'itemMap_' + idx + '_' + Date.now();
-    miniMapDiv.id = miniMapId;
-    card.appendChild(miniMapDiv);
-    list.appendChild(card);
-    setTimeout(() => {
-      let miniMap = L.map(miniMapId, {
-        zoomControl: false, attributionControl: false,
-        dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false
-      }).setView([item.lat, item.lng], 20);
-      L.tileLayer(satelliteLayerURL, { attribution: '', maxZoom:20 }).addTo(miniMap);
-      L.marker([item.lat, item.lng]).addTo(miniMap);
-    }, 100);
-  });
-}
-</script>
+    // Items logic
+    let itemIdx = 0;
+    function addItem() {
+      itemIdx++;
+      const container = document.getElementById('itemsContainer');
+      const div = document.createElement('div');
+      div.className = 'item-section';
+      div.id = 'item'+itemIdx;
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h4>Item #${itemIdx}</h4>
+          <button type="button" class="remove-btn" onclick="removeItem('${div.id}')">Remove</button>
+        </div>
+        <div class="field-row">
+          <div style="flex:2 1 240px">
+            <label>Description</label>
+            <textarea name="itemDesc${itemIdx}" placeholder="Describe the item..." rows="2" required></textarea>
+          </div>
+          <div style="flex:1 1 160px">
+            <label>Pictures</label>
+            <input type="file" name="itemPics${itemIdx}" accept="image/*" multiple onchange="previewPics(this, '${div.id}')"/>
+            <div class="pictures-preview" id="picPreview${itemIdx}"></div>
+          </div>
+        </div>
+        <div>
+          <label>Item Location on Map</label>
+          <div class="map-container" id="map${itemIdx}"></div>
+          <input type="hidden" name="itemLat${itemIdx}" id="lat${itemIdx}">
+          <input type="hidden" name="itemLng${itemIdx}" id="lng${itemIdx}">
+          <div style="margin:7px 0;color:#444; font-size:0.97em;">Selected: <span id="coord${itemIdx}">none</span></div>
+        </div>
+      `;
+      container.appendChild(div);
+      initMap('map'+itemIdx, 'lat'+itemIdx, 'lng'+itemIdx, 'coord'+itemIdx);
+    }
+
+    function removeItem(id) {
+      document.getElementById(id).remove();
+    }
+
+    // Image preview
+    function previewPics(input, itemDivId) {
+      const previewDiv = input.parentElement.querySelector('.pictures-preview');
+      previewDiv.innerHTML = '';
+      if (input.files) {
+        Array.from(input.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            previewDiv.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    // MapTiler map logic
+    function initMap(mapId, latId, lngId, coordId) {
+      const apiKey = "D07LNHRpX8QqmkT39Nza"; // <-- Your API key is set here
+      const map = L.map(mapId, {
+        center: [-22.9068, -43.1729], // Default: Rio de Janeiro (just example)
+        zoom: 15,
+        zoomControl: true
+      });
+      L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${apiKey}`, {
+        attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a>',
+        tileSize: 256,
+        minZoom: 1,
+        maxZoom: 20
+      }).addTo(map);
+      let marker;
+      map.on('click', function(e) {
+        const {lat, lng} = e.latlng;
+        if (marker) marker.setLatLng(e.latlng);
+        else marker = L.marker(e.latlng).addTo(map);
+        document.getElementById(latId).value = lat;
+        document.getElementById(lngId).value = lng;
+        document.getElementById(coordId).textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      });
+      setTimeout(() => { map.invalidateSize(); }, 250);
+    }
+
+    // Dummy submit
+    document.getElementById('reportForm').onsubmit = function(e) {
+      e.preventDefault();
+      alert("Report submitted! (Handle save/export logic here)");
+      // You can serialize and send the data, or implement your own save/export logic here.
+    };
+  </script>
 </body>
 </html>
