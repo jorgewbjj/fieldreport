@@ -239,11 +239,23 @@
       }
     }
 
-    // MapTiler map logic
+    // MapTiler map logic (shows marker as soon as coordinates are picked or present)
     function initMap(mapId, latId, lngId, coordId) {
-      const apiKey = "D07LNHRpX8QqmkT39Nza"; // <-- Your API key is set here
+      const apiKey = "D07LNHRpX8QqmkT39Nza";
+      const latInput = document.getElementById(latId);
+      const lngInput = document.getElementById(lngId);
+      const coordSpan = document.getElementById(coordId);
+
+      // Set default center
+      let defaultLat = -22.9068, defaultLng = -43.1729; // Rio de Janeiro as default
+
+      // If coords are already set, center map and show marker
+      if (latInput.value && lngInput.value) {
+        defaultLat = parseFloat(latInput.value);
+        defaultLng = parseFloat(lngInput.value);
+      }
       const map = L.map(mapId, {
-        center: [-22.9068, -43.1729], // Default: Rio de Janeiro (just example)
+        center: [defaultLat, defaultLng],
         zoom: 15,
         zoomControl: true
       });
@@ -253,15 +265,24 @@
         minZoom: 1,
         maxZoom: 20
       }).addTo(map);
-      let marker;
+
+      let marker = null;
+
+      // If already set, show marker
+      if (latInput.value && lngInput.value) {
+        marker = L.marker([parseFloat(latInput.value), parseFloat(lngInput.value)]).addTo(map);
+        coordSpan.textContent = `${parseFloat(latInput.value).toFixed(6)}, ${parseFloat(lngInput.value).toFixed(6)}`;
+      }
+
       map.on('click', function(e) {
         const {lat, lng} = e.latlng;
         if (marker) marker.setLatLng(e.latlng);
         else marker = L.marker(e.latlng).addTo(map);
-        document.getElementById(latId).value = lat;
-        document.getElementById(lngId).value = lng;
-        document.getElementById(coordId).textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        latInput.value = lat;
+        lngInput.value = lng;
+        coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       });
+
       setTimeout(() => { map.invalidateSize(); }, 250);
     }
 
