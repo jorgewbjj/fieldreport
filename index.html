@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Field Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Leaflet & Cropper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -11,13 +12,14 @@
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
   <style>
     :root {
-      --main: #377dff;
-      --main-dark: #225ec9;
+      --main: #213559;
+      --main-dark: #132040;
+      --accent: #38a3ff;
       --bg: #f7f9fb;
       --card: #fff;
       --subtle: #f3f7fa;
       --radius: 18px;
-      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --shadow: 0 4px 24px rgba(33,53,89,0.08);
     }
     body {
       font-family: 'Inter', Arial, sans-serif;
@@ -25,59 +27,98 @@
       margin: 0; padding: 0;
     }
     .container {
-      max-width: 620px;
-      margin: 28px auto;
+      max-width: 680px;
+      margin: 32px auto;
       background: var(--card);
-      padding: 18px 6vw 20px 6vw;
+      padding: 2.5rem 7vw 2.5rem 7vw;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+      border-top: 8px solid var(--main);
+      transition: box-shadow .2s;
     }
     h2 {
       margin: 0 0 18px 0;
-      font-size: 1.45rem;
-      font-weight: 700;
-      color: #20243a;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--main);
       letter-spacing: -.5px;
+      text-align: center;
+      text-shadow: 0 2px 8px #e2e6ee99;
+    }
+    .summary-block {
+      background: #e8ecf5;
+      border-radius: 13px;
+      margin-bottom: 18px;
+      padding: 20px 18px 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px 22px;
+      box-shadow: 0 3px 16px #21355915;
+      border-left: 7px solid var(--main);
+      border-top: 1px solid #d7dbed;
+    }
+    .summary-col {
+      min-width: 170px;
+      flex: 1 1 240px;
+      margin-bottom: 10px;
+    }
+    .summary-title {
+      font-size: 1.08rem;
+      color: var(--main-dark);
+      font-weight: 700;
+      margin-bottom: 3px;
+      letter-spacing: 0.2px;
+    }
+    .summary-value {
+      font-size: 1.1rem;
+      color: #1a2237;
+      background: #fff;
+      border-radius: 7px;
+      padding: 7px 11px 6px 11px;
+      font-weight: 500;
+      border: 1px solid #dae1f4;
+      box-shadow: 0 1px 2px #223e5b11;
     }
     .field-row, .roof-row, .addr-row {
-      display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;
+      display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 14px;
     }
     .field-col, .roof-col, .addr-col {
       flex: 1 1 120px; min-width: 110px;
     }
     .addr-col { min-width: 70px;}
     label {
-      font-size: .98rem; font-weight: 500; margin-bottom: 4px; display: block; color: #374151;
+      font-size: .99rem; font-weight: 600; margin-bottom: 5px; display: block; color: var(--main-dark);
     }
     input, select, textarea {
-      padding: 10px 12px; border: 1px solid #dde3ed; border-radius: 8px; font-size: 1rem; width: 100%; margin-top: 2px; background: #fcfdfe; transition: border .2s;
+      padding: 10px 12px; border: 1px solid #c5d4ed; border-radius: 8px; font-size: 1rem; width: 100%; margin-top: 2px; background: #fafdff; transition: border .2s;
     }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--main); background: #f6f8ff; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--main); background: #f0f6ff; }
     input[type="date"] { max-width: 100%; }
     button, .add-btn, .remove-btn {
-      cursor: pointer; border: none; color: #fff; background: var(--main); padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 1rem; margin-top: 10px; transition: background .2s;
+      cursor: pointer; border: none; color: #fff; background: var(--main); padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 1rem; margin-top: 10px; transition: background .2s;
     }
     button:hover, .add-btn:hover, .remove-btn:hover { background: var(--main-dark); }
-    .add-btn, .remove-btn { background: #2fc069; margin-top: 10px; padding: 8px 13px; font-size: .95rem; }
+    .add-btn, .remove-btn { background: var(--accent); margin-top: 10px; padding: 8px 13px; font-size: .97rem; }
     .remove-btn { background: #e44; margin-left: 10px; }
     .item-section {
-      background: var(--subtle); border-radius: 12px; padding: 15px; margin-bottom: 16px; position: relative; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      background: var(--subtle); border-radius: 12px; padding: 16px 16px 18px 16px; margin-bottom: 17px; position: relative; box-shadow: 0 1px 4px #21355911;
+      border-left: 4px solid var(--main-dark);
     }
     .item-header-row {
       display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;
     }
-    .item-title { font-weight: 700; font-size: 1.01rem; color: #374151; margin-right: 12px; }
-    .item-desc-inline { font-size: 0.98rem; color: #296fb8; font-weight: 500; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+    .item-title { font-weight: 700; font-size: 1.06rem; color: var(--main-dark); margin-right: 12px; }
+    .item-desc-inline { font-size: 1.02rem; color: var(--accent); font-weight: 500; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
     .pictures-preview {
-      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+      display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 8px;
     }
     .pictures-preview img {
-      max-width: 120px; max-height: 100px; border-radius: 7px; box-shadow: 0 1px 4px rgba(0,0,0,0.09); object-fit: cover;
+      max-width: 130px; max-height: 110px; border-radius: 9px; box-shadow: 0 1px 6px #1a295b13; object-fit: cover;
     }
     .map-container {
-      width: 100%; height: 160px; margin-top: 7px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,0.03);
+      width: 100%; height: 160px; margin-top: 7px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 5px #1a295b07;
     }
-    #generatePDF { background: #2b9cf6; margin-top: 18px; width: 100%; padding: 12px; font-size: 1rem; }
+    #generatePDF { background: var(--main); margin-top: 18px; width: 100%; padding: 12px; font-size: 1.08rem; }
     #addTechPrompt { display: none; margin-top: 7px; gap: 6px; }
     #addTechPrompt input { width: auto; flex: 2 1 80px;}
     #allItemsMapForPDF {
@@ -88,19 +129,17 @@
       display:none; position:fixed; z-index:99999; left:0; top:0; width:100vw; height:100vh; overflow:auto; background:rgba(22,35,51,0.63); justify-content:center; align-items:center;
     }
     .modal-content {
-      background:#fff; padding:18px 14px 14px 14px; border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.16); min-width:300px; max-width:94vw;
+      background:#fff; padding:18px 14px 14px 14px; border-radius:14px; box-shadow:0 8px 32px #0003; min-width:300px; max-width:94vw;
       display:flex; flex-direction:column; align-items:center;
     }
     .cropper-container { max-width: 92vw; max-height: 55vh;}
     .modal-actions { margin-top:12px; display:flex; gap:12px;}
-    @media (max-width:600px) {
-      .container { padding: 8vw 2vw; box-shadow: 0 2px 12px rgba(0,0,0,0.09);}
+    @media (max-width:700px) {
+      .container { padding: 8vw 2vw;}
       .item-section {padding:10px;}
-      .pictures-preview img {max-width:95px;max-height:70px;}
+      .pictures-preview img {max-width:97px;max-height:76px;}
       #allItemsMapForPDF {width:96vw;height:33vw;}
-      .roof-row, .field-row, .addr-row {flex-direction:column;}
-      .roof-col, .field-col, .addr-col {min-width:0;}
-      .modal-content {max-width:98vw;}
+      .summary-block {flex-direction:column;gap:8px;}
     }
     @media (max-width:400px) {
       .field-row, .field-col, .roof-row, .roof-col, .addr-row, .addr-col {flex-direction:column;min-width:0;}
@@ -111,6 +150,7 @@
 <body>
   <div class="container" id="reportMain">
     <h2>Field Report</h2>
+    <div class="summary-block" id="summaryBlock" style="display:none;"></div>
     <!-- ROOF INFO -->
     <div class="roof-row">
       <div class="roof-col">
@@ -145,34 +185,13 @@
     </div>
     <form id="reportForm" autocomplete="off">
       <div class="addr-row">
-        <div class="addr-col">
-          <label for="street">Street</label>
-          <input type="text" id="street" required />
-        </div>
-        <div class="addr-col">
-          <label for="number">Number</label>
-          <input type="text" id="number" required />
-        </div>
-        <div class="addr-col">
-          <label for="city">City</label>
-          <input type="text" id="city" required />
-        </div>
-        <div class="addr-col">
-          <label for="state">State</label>
-          <input type="text" id="state" required />
-        </div>
-        <div class="addr-col">
-          <label for="zip">Zip</label>
-          <input type="text" id="zip" required />
-        </div>
-        <div class="addr-col">
-          <label for="country">Country</label>
-          <input type="text" id="country" required />
-        </div>
-        <div class="addr-col">
-          <label for="date">Date</label>
-          <input type="date" id="date" required />
-        </div>
+        <div class="addr-col"><label for="street">Street</label><input type="text" id="street" required /></div>
+        <div class="addr-col"><label for="number">Number</label><input type="text" id="number" required /></div>
+        <div class="addr-col"><label for="city">City</label><input type="text" id="city" required /></div>
+        <div class="addr-col"><label for="state">State</label><input type="text" id="state" required /></div>
+        <div class="addr-col"><label for="zip">Zip</label><input type="text" id="zip" required /></div>
+        <div class="addr-col"><label for="country">Country</label><input type="text" id="country" required /></div>
+        <div class="addr-col"><label for="date">Date</label><input type="date" id="date" required /></div>
       </div>
       <div class="field-row">
         <div class="field-col">
@@ -187,7 +206,7 @@
           </select>
           <div id="addTechPrompt" style="display: flex; align-items: center;">
             <input type="text" id="addTechInput" placeholder="Technician name"/>
-            <button type="button" id="addTechBtn" style="background:#6a4cff; padding: 7px 15px; width:auto;">Add</button>
+            <button type="button" id="addTechBtn" style="background:#295ea6; padding: 7px 15px; width:auto;">Add</button>
             <button type="button" id="cancelTechBtn" style="background:#aaa; padding: 7px 12px; width:auto;">Cancel</button>
           </div>
         </div>
@@ -229,8 +248,7 @@
     function showOtherRoofType() {
       var rt = document.getElementById('roofType');
       var rto = document.getElementById('roofTypeOther');
-      if(rt.value === 'Other') rto.style.display = '';
-      else rto.style.display = 'none';
+      rto.style.display = (rt.value === 'Other') ? '' : 'none';
     }
     // Set today as default date
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
@@ -327,7 +345,6 @@
       `;
       container.appendChild(div);
       initMap('map'+itemIdx, 'lat'+itemIdx, 'lng'+itemIdx, 'coord'+itemIdx);
-      // Picture store (in memory)
       div.croppedImages = [];
     }
     function removeItem(id) {
@@ -432,11 +449,11 @@
       }
     }
 
-    // PDF GENERATION (address separated, big images, 2 per row)
+    // PDF GENERATION (one item per row, big images, never cut, navy design)
     document.getElementById('generatePDF').onclick = async function() {
       const jsPDF = window.jspdf.jsPDF;
       const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
-      let y = 30, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 30;
+      let y = 38, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 34;
 
       // --- ROOF FIELDS
       const roofCondition = document.getElementById('roofCondition').value;
@@ -458,100 +475,78 @@
       const store = document.getElementById('store').value;
       const storeNum = document.getElementById('storeNum').value;
 
-      pdf.setFontSize(18);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(33, 53, 89);
+      pdf.setFontSize(23);
       pdf.text('Field Report', leftMargin, y);
-      y += 20;
+      y += 26;
       pdf.setFontSize(12);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(40, 40, 52);
       pdf.text(`Roof Condition: ${roofCondition}`, leftMargin, y += 16);
-      pdf.text(`Type of Roof: ${roofType}`, leftMargin+210, y);
+      pdf.text(`Type of Roof: ${roofType}`, leftMargin+220, y);
       pdf.text(`Roof Access: ${roofAccess}`, leftMargin, y += 16);
-      y += 4;
-      // Address block
-      pdf.setFontSize(13);
-      pdf.text('Address:', leftMargin, y += 22);
-      pdf.setFontSize(12);
-      pdf.text(`Street: ${street}`, leftMargin, y += 18);
-      pdf.text(`Number: ${number}`, leftMargin+230, y);
-      pdf.text(`City: ${city}`, leftMargin, y += 18);
-      pdf.text(`State: ${state}`, leftMargin+230, y);
-      pdf.text(`Zip: ${zip}`, leftMargin, y += 18);
-      pdf.text(`Country: ${country}`, leftMargin+230, y);
+      y += 2;
+      pdf.setFontSize(13); pdf.setFont(undefined, "bold");
+      pdf.text('Address:', leftMargin, y += 20);
+      pdf.setFontSize(12); pdf.setFont(undefined, "normal");
+      pdf.text(`Street: ${street}`, leftMargin, y += 17);
+      pdf.text(`Number: ${number}`, leftMargin+220, y);
+      pdf.text(`City: ${city}`, leftMargin, y += 17);
+      pdf.text(`State: ${state}`, leftMargin+220, y);
+      pdf.text(`Zip: ${zip}`, leftMargin, y += 17);
+      pdf.text(`Country: ${country}`, leftMargin+220, y);
       y += 4;
       pdf.text(`Date: ${date}`, leftMargin, y += 20);
-      pdf.text(`Technician: ${tech}`, leftMargin, y += 18);
-      pdf.text(`Store: ${store}`, leftMargin, y += 18);
-      pdf.text(`Store Number: ${storeNum}`, leftMargin+200, y);
+      pdf.text(`Technician: ${tech}`, leftMargin, y += 17);
+      pdf.text(`Store: ${store}`, leftMargin, y += 17);
+      pdf.text(`Store Number: ${storeNum}`, leftMargin+220, y);
 
-      y += 28;
-      pdf.setFontSize(15);
+      y += 30;
+      pdf.setFontSize(16);
+      pdf.setTextColor(33, 53, 89);
       pdf.text('Items', leftMargin, y);
       y += 10;
+      pdf.setTextColor(40,40,52);
+
       const itemSections = document.querySelectorAll('.item-section');
       const locations = [];
-      let i = 0;
-      while (i < itemSections.length) {
-        let secA = itemSections[i];
-        let secB = (i+1 < itemSections.length) ? itemSections[i+1] : null;
-        let descA = secA.querySelector('textarea').value;
-        let descB = secB ? secB.querySelector('textarea').value : "";
-        let imgsA = secA.croppedImages || [];
-        let imgsB = secB ? (secB.croppedImages || []) : [];
-        let canFitTwo = secB && imgsA.length <= 2 && imgsB.length <= 2;
-        let rowHeight = 230;
+      for (let i = 0; i < itemSections.length; i++) {
+        let sec = itemSections[i];
+        let desc = sec.querySelector('textarea').value;
+        let imgs = sec.croppedImages || [];
+        const coord = sec.querySelector('[id^="coord"]').textContent;
+        const lat = sec.querySelector('[id^="lat"]').value;
+        const lng = sec.querySelector('[id^="lng"]').value;
+        if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
         // --- PAGE BREAK if needed
-        if (y + rowHeight > pageHeight - 60) { pdf.addPage(); y = 30;}
-        if (canFitTwo) {
-          let itemX = [leftMargin, leftMargin+265];
-          [secA, secB].forEach((sec, idx) => {
-            const baseY = y + 15;
-            const desc = sec.querySelector('textarea').value;
-            const coord = sec.querySelector('[id^="coord"]').textContent;
-            const lat = sec.querySelector('[id^="lat"]').value;
-            const lng = sec.querySelector('[id^="lng"]').value;
-            if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+idx+1});
-            pdf.setFontSize(13);
-            pdf.text(`Item #${i+idx+1}: ${desc}`, itemX[idx], baseY);
-            pdf.setFontSize(12);
-            pdf.text(`Location: ${coord}`, itemX[idx], baseY+18);
-            // Big images, side by side
-            let imgY = baseY+35, imgX = itemX[idx];
-            const imgs = sec.croppedImages || [];
-            for (let j = 0; j < imgs.length && j < 2; j++) {
-              pdf.addImage(imgs[j], 'JPEG', imgX+(j*120), imgY, 110, 95);
-            }
-          });
-          y += rowHeight;
-          i += 2;
-        } else {
-          const baseY = y + 15;
-          const desc = secA.querySelector('textarea').value;
-          const coord = secA.querySelector('[id^="coord"]').textContent;
-          const lat = secA.querySelector('[id^="lat"]').value;
-          const lng = secA.querySelector('[id^="lng"]').value;
-          if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
-          pdf.setFontSize(13);
-          pdf.text(`Item #${i+1}: ${desc}`, leftMargin, baseY);
-          pdf.setFontSize(12);
-          pdf.text(`Location: ${coord}`, leftMargin, baseY+18);
-          // Big images, 2 per row
-          let imgY = baseY+35, imgX = leftMargin;
-          const imgs = secA.croppedImages || [];
-          for (let j = 0; j < imgs.length; j+=2) {
-            if (imgY+110 > pageHeight-60) { pdf.addPage(); imgY = 30; }
-            for (let k=0;k<2 && (j+k)<imgs.length;k++) {
-              pdf.addImage(imgs[j+k], 'JPEG', imgX+k*120, imgY, 110, 95);
-            }
-            imgY += 110;
+        let itemBlockHeight = 90 + (Math.ceil(imgs.length/2) * 135);
+        if (y + itemBlockHeight > pageHeight - 60) { pdf.addPage(); y = 38; }
+        pdf.setFontSize(14);
+        pdf.setTextColor(33, 53, 89);
+        pdf.text(`Item #${i+1}:`, leftMargin, y+=26);
+        pdf.setFontSize(12); pdf.setTextColor(40,40,52);
+        pdf.text(desc, leftMargin+62, y-2);
+        pdf.text(`Location: ${coord}`, leftMargin, y+=18);
+
+        // Draw images (two side by side per row, larger size)
+        let imgY = y+4, imgX = leftMargin, imgWidth = 172, imgHeight = 120, gapX = 18;
+        for (let j = 0; j < imgs.length; j += 2) {
+          // If next row of images would overflow page, addPage
+          if (imgY+imgHeight > pageHeight-60) { pdf.addPage(); imgY = 38; }
+          for (let k = 0; k < 2 && j+k < imgs.length; k++) {
+            pdf.addImage(imgs[j+k], 'JPEG', imgX+(k*(imgWidth+gapX)), imgY, imgWidth, imgHeight);
           }
-          y += rowHeight;
-          i += 1;
+          imgY += imgHeight+12;
         }
+        y = imgY+2;
       }
-      // All-items map at end
+      // All-items map at end (auto-cluster and smaller numbers for close markers)
       if (locations.length > 0) await generateAllItemsMapPDF(locations, pdf);
       pdf.save(`field-report-${date}.pdf`);
     };
 
+    // Use offset for numbers if too close, auto-reduce icon size if too close
     async function generateAllItemsMapPDF(locations, pdf) {
       return new Promise((resolve) => {
         const mapDiv = document.getElementById('allItemsMapForPDF');
@@ -571,14 +566,38 @@
         L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza`, {
           tileSize: 256, minZoom: 1, maxZoom: 20
         }).addTo(map);
+
+        // Find pairs too close and apply offset + size reduction
+        let offsets = [];
+        let minDist = 0.00012; // about 15m
+        for (let i=0; i<locations.length; i++) offsets.push({dx:0,dy:0,size:30});
+        for (let i=0; i<locations.length; i++) {
+          for (let j=i+1; j<locations.length; j++) {
+            let dLat = locations[i].lat - locations[j].lat;
+            let dLng = locations[i].lng - locations[j].lng;
+            let dist = Math.sqrt(dLat*dLat + dLng*dLng);
+            if (dist < minDist) {
+              let angle = ((j-i)/locations.length)*2*Math.PI;
+              let sep = (minDist-dist)*5+0.00018;
+              offsets[j].dx += Math.cos(angle)*sep;
+              offsets[j].dy += Math.sin(angle)*sep;
+              offsets[i].dx -= Math.cos(angle)*sep;
+              offsets[i].dy -= Math.sin(angle)*sep;
+              offsets[i].size = offsets[j].size = 22; // smaller marker for overlapping
+            }
+          }
+        }
+
         locations.forEach((l, idx) => {
-          const marker = L.marker([l.lat, l.lng]).addTo(map);
+          let o = offsets[idx];
+          const marker = L.marker([l.lat+o.dy, l.lng+o.dx]).addTo(map);
           const numberIcon = L.divIcon({
-            html: `<div style="background:#2b9cf6;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid #fff;">${l.num}</div>`,
-            className: '', iconSize: [30,30], iconAnchor: [15,15]
+            html: `<div style="background:#213559;color:#fff;border-radius:50%;width:${o.size}px;height:${o.size}px;display:flex;align-items:center;justify-content:center;font-size:${o.size-9}px;border:2px solid #fff;box-shadow:0 2px 7px #223e5b21;">${l.num}</div>`,
+            className: '', iconSize: [o.size,o.size], iconAnchor: [o.size/2,o.size/2]
           });
           marker.setIcon(numberIcon);
         });
+
         setTimeout(async () => {
           await html2canvas(mapDiv, {useCORS:true}).then(canvas => {
             map.remove(); mapDiv.style.display = "none";
@@ -588,17 +607,36 @@
             pdf.text('All Item Locations', pageWidth/2, 40, {align:'center'});
             const imgWidth = 540, imgHeight = 260;
             const imgX = (pageWidth-imgWidth)/2;
-            pdf.setDrawColor(200);
+            pdf.setDrawColor(90,110,150);
             pdf.rect(imgX-10, 54, imgWidth+20, imgHeight+20);
-            pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), 'JPEG', imgX, 64, imgWidth, imgHeight);
+            pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), 'JPEG', imgX, 64, imgWidth, imgHeight);
             resolve();
           });
-        }, 1200);
+        }, 1250);
       });
     }
 
     document.getElementById('reportForm').onsubmit = function(e) {
       e.preventDefault();
+      // Update summary preview block for live UI (optional)
+      const s = document.getElementById('summaryBlock');
+      const roofCondition = document.getElementById('roofCondition').value;
+      let roofType = document.getElementById('roofType').value;
+      if(roofType === "Other") roofType = document.getElementById('roofTypeOther').value;
+      const roofAccess = document.getElementById('roofAccess').value;
+      const store = document.getElementById('store').value;
+      const storeNum = document.getElementById('storeNum').value;
+      const city = document.getElementById('city').value;
+      const tech = document.getElementById('technician').value;
+      s.innerHTML = `
+        <div class="summary-col"><div class="summary-title">Condition</div><div class="summary-value">${roofCondition||'–'}</div></div>
+        <div class="summary-col"><div class="summary-title">Roof Type</div><div class="summary-value">${roofType||'–'}</div></div>
+        <div class="summary-col"><div class="summary-title">Access</div><div class="summary-value">${roofAccess||'–'}</div></div>
+        <div class="summary-col"><div class="summary-title">Store</div><div class="summary-value">${store||'–'} <span style="color:#bbb;font-size:.98em;">#${storeNum||''}</span></div></div>
+        <div class="summary-col"><div class="summary-title">Technician</div><div class="summary-value">${tech||'–'}</div></div>
+        <div class="summary-col"><div class="summary-title">City</div><div class="summary-value">${city||'–'}</div></div>
+      `;
+      s.style.display = '';
       alert("Report submitted! (Handle save/export logic here)");
     };
   </script>
