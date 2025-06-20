@@ -176,16 +176,15 @@
     <h2>Field Report</h2>
     <div class="logo-row" id="logoRow">
       <div class="logo-choice selected" onclick="selectLogo(this, 'seal')">
-        <img src="https://drive.google.com/uc?export=view&id=1OJjBdbvirXd0b1CBrdcX-8_XGvBf2JZp
-" alt="Seal Top" /> Seal Top
-      </div>
-      <div class="logo-choice" onclick="selectLogo(this, 'ibs')">
-        <img src="https://i.imgur.com/DtTK6oJ.png" alt="IBS Roofing" /> IBS Roofing
-      </div>
-      <div class="logo-choice" onclick="selectLogo(this, 'zurix')">
-        <img src="https://i.imgur.com/Nck2oa7.png" alt="Zurix" /> Zurix
-      </div>
-    </div>
+    <img src="seal.png" alt="Seal Top" /> Seal Top
+  </div>
+  <div class="logo-choice" onclick="selectLogo(this, 'ibs')">
+    <img src="ibs.png" alt="IBS Roofing" /> IBS Roofing
+  </div>
+  <div class="logo-choice" onclick="selectLogo(this, 'zurix')">
+    <img src="zurix.png" alt="Zurix" /> Zurix
+  </div>
+</div>
     <!-- ROOF INFO & FORM -->
     <div class="roof-row" style="margin-bottom:10px;">
       <div class="roof-col">
@@ -281,12 +280,12 @@
   <script>
     // Logo logic
     let selectedLogo = 'seal';
-    const logoOptions = {
-      seal: {url: "https://drive.google.com/uc?export=view&id=1OJjBdbvirXd0b1CBrdcX-8_XGvBf2JZp
-", w: 90, h: 34},
-      ibs:  {url: "https://i.imgur.com/DtTK6oJ.png", w: 87, h: 33},
-      zurix: {url: "https://i.imgur.com/Nck2oa7.png", w: 92, h: 32}
-    };
+ const logoOptions = {
+  seal:  {url: "seal.png",   w: 90, h: 34},
+  ibs:   {url: "ibs.png",    w: 87, h: 33},
+  zurix: {url: "zurix.png",  w: 92, h: 32}
+};
+
     function selectLogo(el, key) {
       selectedLogo = key;
       document.querySelectorAll('.logo-choice').forEach(e=>e.classList.remove('selected'));
