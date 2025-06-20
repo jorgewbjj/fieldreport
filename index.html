@@ -20,111 +20,37 @@
       --radius: 18px;
       --shadow: 0 4px 24px rgba(33,53,89,0.08);
     }
-    body {
-      font-family: 'Inter', Arial, sans-serif;
-      background: var(--bg);
-      margin: 0; padding: 0;
-    }
+    body { font-family: 'Inter', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; }
     .container {
-      max-width: 700px;
-      margin: 32px auto;
-      background: var(--card);
-      padding: 2.2rem 7vw 2.2rem 7vw;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border-top: 8px solid var(--main);
+      max-width: 700px; margin: 32px auto; background: var(--card);
+      padding: 2.2rem 7vw 2.2rem 7vw; border-radius: var(--radius);
+      box-shadow: var(--shadow); border-top: 8px solid var(--main);
       transition: box-shadow .2s;
     }
-    h2 {
-      margin: 0 0 10px 0;
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--main);
-      letter-spacing: -.5px;
-      text-align: center;
-      text-shadow: 0 2px 8px #e2e6ee99;
+    h2 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; color: var(--main);
+      letter-spacing: -.5px; text-align: center; text-shadow: 0 2px 8px #e2e6ee99;
     }
     #bigLogoWrap { text-align: center; margin-bottom: 12px; }
-    #bigLogo {
-      max-width: 240px;
-      width: 98%;
-      margin: 0 auto 12px auto;
-      display: block;
-      filter: drop-shadow(0 2px 8px #22395e22);
-    }
-    .logo-row {
-      display: flex; align-items: center; justify-content: center;
-      gap: 18px; margin-top: 0px; margin-bottom: 16px; flex-wrap: wrap;
-    }
+    #bigLogo { max-width: 240px; width: 98%; margin: 0 auto 12px auto; display: block; filter: drop-shadow(0 2px 8px #22395e22);}
+    .logo-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 16px; flex-wrap: wrap; }
     .logo-choice {
-      background: #fff;
-      border: 2px solid #a9b8db;
-      border-radius: 10px;
-      padding: 8px 14px;
-      cursor: pointer;
-      font-weight: 700;
-      color: #22395e;
-      font-size: 1.08rem;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      transition: border .18s;
-      box-shadow: 0 2px 8px #23325913;
+      background: #fff; border: 2px solid #a9b8db; border-radius: 10px; padding: 8px 14px; cursor: pointer; font-weight: 700;
+      color: #22395e; font-size: 1.08rem; display: flex; align-items: center; gap: 7px; transition: border .18s; box-shadow: 0 2px 8px #23325913;
     }
-    .logo-choice.selected {
-      border: 2.5px solid var(--main);
-      color: var(--main-dark);
-      background: #eaf1fd;
-    }
-    .logo-choice img {
-      height: 48px;
-      width: auto;
-      vertical-align: middle;
-      filter: drop-shadow(0 1px 5px #22395e21);
-      border-radius: 3px;
-    }
+    .logo-choice.selected { border: 2.5px solid var(--main); color: var(--main-dark); background: #eaf1fd; }
+    .logo-choice img { height: 48px; width: auto; vertical-align: middle; filter: drop-shadow(0 1px 5px #22395e21); border-radius: 3px;}
     .info-header-block {
-      background: #eaf0fb;
-      border-radius: 13px;
-      border-left: 7px solid var(--main);
-      border-top: 1px solid #d7dbed;
-      margin-bottom: 18px;
-      padding: 18px 22px 10px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      max-width: 520px;
-      margin-left: auto;
-      margin-right: auto;
+      background: #eaf0fb; border-radius: 13px; border-left: 7px solid var(--main);
+      border-top: 1px solid #d7dbed; margin-bottom: 18px; padding: 18px 22px 10px 24px; display: flex; flex-direction: column; gap: 4px;
+      max-width: 520px; margin-left: auto; margin-right: auto;
     }
-    .info-header-line {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 30px;
-      font-size: 1.08rem;
-      color: #22395e;
-    }
-    .info-header-label {
-      font-weight: 700;
-      margin-right: 4px;
-      color: #132040;
-    }
-    .info-header-value {
-      font-weight: 500;
-      color: #283659;
-      margin-right: 14px;
-      display: inline-block;
-    }
-    .field-row, .roof-row, .addr-row {
-      display: flex; flex-wrap: wrap; gap: 13px; margin-bottom: 12px;
-    }
-    .field-col, .roof-col, .addr-col {
-      flex: 1 1 120px; min-width: 110px;
-    }
+    .info-header-line { display: flex; flex-wrap: wrap; gap: 30px; font-size: 1.08rem; color: #22395e; }
+    .info-header-label { font-weight: 700; margin-right: 4px; color: #132040; }
+    .info-header-value { font-weight: 500; color: #283659; margin-right: 14px; display: inline-block; }
+    .field-row, .roof-row, .addr-row { display: flex; flex-wrap: wrap; gap: 13px; margin-bottom: 12px; }
+    .field-col, .roof-col, .addr-col { flex: 1 1 120px; min-width: 110px; }
     .addr-col { min-width: 70px;}
-    label {
-      font-size: .99rem; font-weight: 600; margin-bottom: 5px; display: block; color: var(--main-dark);
-    }
+    label { font-size: .99rem; font-weight: 600; margin-bottom: 5px; display: block; color: var(--main-dark);}
     input, select, textarea {
       padding: 10px 12px; border: 1px solid #c5d4ed; border-radius: 8px; font-size: 1rem; width: 100%; margin-top: 2px; background: #fafdff; transition: border .2s;
     }
@@ -140,9 +66,7 @@
       background: var(--subtle); border-radius: 12px; padding: 16px 16px 18px 16px; margin-bottom: 17px; position: relative; box-shadow: 0 1px 4px #21355911;
       border-left: 4px solid var(--main-dark);
     }
-    .item-header-row {
-      display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;
-    }
+    .item-header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
     .item-title { font-weight: 700; font-size: 1.06rem; color: var(--main-dark); margin-right: 12px; }
     .item-desc-inline { font-size: 1.02rem; color: var(--accent); font-weight: 500; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
     .pictures-preview {
@@ -150,36 +74,30 @@
     }
     .pictures-preview img {
       max-width: 140px; max-height: 105px; border-radius: 9px; box-shadow: 0 1px 6px #1a295b13; object-fit: cover;
-      aspect-ratio: 4/3;
-      background: #cbd6e7;
+      aspect-ratio: 4/3; background: #cbd6e7;
     }
     .map-container {
       width: 100%; height: 160px; margin-top: 7px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 5px #1a295b07;
     }
+    #overviewMapWrap { margin: 30px 0 18px 0; text-align: center;}
+    #overviewMapLabel { font-weight: 700; color: #213559; font-size: 1.1em; margin-bottom: 7px; display:block; }
+    #overviewMap {
+      width: 97%; max-width: 610px; height: 280px; border-radius: 13px; box-shadow: 0 2px 14px #12355911; border: 3px solid #e9e9e9; margin: 0 auto 5px auto; display: block;
+    }
     #generatePDF { background: var(--main); margin-top: 18px; width: 100%; padding: 12px; font-size: 1.08rem; }
     #addTechPrompt { display: none; margin-top: 7px; gap: 6px; }
     #addTechPrompt input { width: auto; flex: 2 1 80px;}
-    #allItemsMapForPDF {
-      width: 540px; height: 260px; position: absolute; top: -10000px; left: -10000px; z-index: -1; border-radius: 13px; overflow: hidden; background: #e9e9e9; border: 3px solid #eee;
-    }
     .modal {
       display:none; position:fixed; z-index:99999; left:0; top:0; width:100vw; height:100vh; overflow:auto; background:rgba(22,35,51,0.63); justify-content:center; align-items:center;
     }
-    .modal-content {
-      background:#fff; padding:18px 14px 14px 14px; border-radius:14px; box-shadow:0 8px 32px #0003; min-width:300px; max-width:94vw;
-      display:flex; flex-direction:column; align-items:center;
-    }
+    .modal-content { background:#fff; padding:18px 14px 14px 14px; border-radius:14px; box-shadow:0 8px 32px #0003; min-width:300px; max-width:94vw;
+      display:flex; flex-direction:column; align-items:center; }
     .modal-actions { margin-top:12px; display:flex; gap:12px;}
     @media (max-width:700px) {
       .container { padding: 8vw 2vw;}
       .item-section {padding:10px;}
       .pictures-preview img {max-width:97px;max-height:72px;}
-      #allItemsMapForPDF {width:96vw;height:33vw;}
-      .logo-row {gap:10px;}
-    }
-    @media (max-width:400px) {
-      .field-row, .field-col, .roof-row, .roof-col, .addr-row, .addr-col {flex-direction:column;min-width:0;}
-      input, select, textarea {font-size: .98rem;}
+      #overviewMap {height:160px;}
     }
   </style>
 </head>
@@ -300,15 +218,10 @@
       <h3 style="margin-bottom:0;font-size:1.10rem;">Items</h3>
       <div id="itemsContainer"></div>
       <button type="button" class="add-btn" onclick="addItem()">+ Add Item</button>
-      <!-- MAP DISPLAY OPTIONS -->
-      <div style="margin-top:25px; margin-bottom:10px;">
-        <label style="font-weight:700; color:#22395e; margin-bottom:6px; display:block;">Overview Map Display in PDF</label>
-        <div id="mapDisplayOpts" style="display:flex; gap:15px; flex-wrap:wrap;">
-          <label><input type="radio" name="mapDisplay" value="auto" checked> Auto Fit All Markers</label>
-          <label><input type="radio" name="mapDisplay" value="center"> Center on Building</label>
-          <label><input type="radio" name="mapDisplay" value="zoomout"> Zoomed Out (Show Area)</label>
-          <label><input type="radio" name="mapDisplay" value="closeup"> Close-up (Show Details)</label>
-        </div>
+      <!-- OVERVIEW MAP LIVE! -->
+      <div id="overviewMapWrap">
+        <span id="overviewMapLabel">Overview Map – adjust as you want for the PDF:</span>
+        <div id="overviewMap"></div>
       </div>
       <div style="margin-top:18px;">
         <button type="submit">Submit Report</button>
@@ -316,8 +229,9 @@
       </div>
     </form>
   </div>
-  <div id="allItemsMapForPDF"></div>
-  <!-- Cropper Modal, scripts, etc. remain unchanged -->
+  <div style="display:none;">
+    <div id="allItemsMapForPDF"></div>
+  </div>
   <div class="modal" id="cropperModal">
     <div class="modal-content">
       <div style="margin-bottom:8px;font-weight:600;">Crop & Rotate Image</div>
@@ -345,7 +259,6 @@
       el.classList.add('selected');
       document.getElementById('bigLogo').src = logoOptions[key].url;
     }
-    // Show/hide custom roof type
     function showOtherRoofType() {
       var rt = document.getElementById('roofType');
       var rto = document.getElementById('roofTypeOther');
@@ -376,8 +289,8 @@
         });
       }
       updateSummary();
+      setTimeout(initOverviewMap, 200); // Wait for DOM
     };
-    // Update summary info block live
     function updateSummary() {
       document.getElementById('sumStore').textContent = document.getElementById('store').value || "";
       document.getElementById('sumStoreNum').textContent = document.getElementById('storeNum').value || "";
@@ -394,6 +307,7 @@
       document.getElementById('sumState').textContent = document.getElementById('state').value || "";
       document.getElementById('sumZip').textContent = document.getElementById('zip').value || "";
       document.getElementById('sumCountry').textContent = document.getElementById('country').value || "";
+      updateOverviewMap();
     }
     // Technician Dropdown with Add Feature
     const technicianSelect = document.getElementById('technician');
@@ -466,9 +380,11 @@
       container.appendChild(div);
       initMap('map'+itemIdx, 'lat'+itemIdx, 'lng'+itemIdx, 'coord'+itemIdx);
       div.croppedImages = [];
+      updateOverviewMap();
     }
     function removeItem(id) {
       document.getElementById(id).remove();
+      updateOverviewMap();
     }
     function updateDescInline(idx, value) {
       document.getElementById(`desc-inline-${idx}`).textContent = value.trim() || "(no description yet)";
@@ -528,7 +444,7 @@
       img.src = dataUrl;
       previewDiv.appendChild(img);
     }
-    // Map logic (same as before)
+    // MapTiler map logic (uses current position)
     function initMap(mapId, latId, lngId, coordId) {
       const apiKey = "D07LNHRpX8QqmkT39Nza";
       const latInput = document.getElementById(latId);
@@ -570,7 +486,50 @@
         showMap(-22.9068, -43.1729);
       }
     }
-    // PDF GENERATION (logo centered and bigger, info left-aligned)
+
+    // Overview map logic (for user to pan/zoom and see all item locations)
+    let overviewMap, overviewMapMarkers = [];
+    function initOverviewMap() {
+      if (overviewMap) { overviewMap.remove(); overviewMap = null; }
+      overviewMap = L.map('overviewMap', { center: [37,-96], zoom: 4, zoomControl: true });
+      L.tileLayer('https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza', {
+        attribution: '', tileSize: 256, minZoom: 1, maxZoom: 20
+      }).addTo(overviewMap);
+      updateOverviewMap();
+    }
+    function updateOverviewMap() {
+      if (!overviewMap) return;
+      overviewMapMarkers.forEach(m=>overviewMap.removeLayer(m));
+      overviewMapMarkers = [];
+      const itemSections = document.querySelectorAll('.item-section');
+      let bounds = [];
+      for (let i=0; i<itemSections.length; i++) {
+        const sec = itemSections[i];
+        const lat = sec.querySelector('[id^="lat"]').value;
+        const lng = sec.querySelector('[id^="lng"]').value;
+        if (lat && lng) {
+          bounds.push([parseFloat(lat), parseFloat(lng)]);
+          let marker = L.marker([parseFloat(lat),parseFloat(lng)]);
+          const numberIcon = L.divIcon({
+            html: `<div style="background:#213559;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff;box-shadow:0 2px 7px #223e5b21;">${i+1}</div>`,
+            className: '', iconSize: [18,18], iconAnchor: [9,9]
+          });
+          marker.setIcon(numberIcon);
+          marker.addTo(overviewMap);
+          overviewMapMarkers.push(marker);
+        }
+      }
+      // Auto-zoom if possible
+      if (bounds.length === 1) {
+        overviewMap.setView(bounds[0], 18);
+      } else if (bounds.length > 1) {
+        overviewMap.fitBounds(bounds, {padding:[22,22]});
+      }
+    }
+    // When user adds/removes item, update map markers
+    // Already called from updateSummary, addItem, removeItem
+
+    // PDF GENERATION uses the *current state of the overview map* for the report!
     document.getElementById('generatePDF').onclick = async function() {
       const jsPDF = window.jspdf.jsPDF;
       const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
@@ -645,22 +604,8 @@
         }
         y = imgY+2;
       }
-      // --- OVERVIEW MAP OPTIONS ---
-      let mapOption = document.querySelector('input[name="mapDisplay"]:checked').value;
-      let mapOpts = {};
-      if(mapOption === "center") {
-        mapOpts.center = {lat:locations[0].lat, lng:locations[0].lng};
-        mapOpts.zoom = 18;
-      } else if(mapOption === "zoomout") {
-        mapOpts.center = {lat:locations[0].lat, lng:locations[0].lng};
-        mapOpts.zoom = 16;
-      } else if(mapOption === "closeup") {
-        mapOpts.center = {lat:locations[0].lat, lng:locations[0].lng};
-        mapOpts.zoom = 20;
-      } else {
-        mapOpts.fit = true; // auto-fit all markers
-      }
-      if (locations.length > 0) await generateAllItemsMapPDF(locations, pdf, mapOpts);
+      // --- OVERVIEW MAP (snapshot from live map) ---
+      if (locations.length > 0) await generateAllItemsMapPDF_fromLive(overviewMap, pdf);
       pdf.save(`field-report-${date}.pdf`);
     };
     function getImageDataUrl(url) {
@@ -677,68 +622,12 @@
         img.src = url;
       });
     }
-    async function generateAllItemsMapPDF(locations, pdf, opts={}) {
+    // Overview map snapshot logic:
+    async function generateAllItemsMapPDF_fromLive(map, pdf) {
       return new Promise((resolve) => {
-        const mapDiv = document.getElementById('allItemsMapForPDF');
-        mapDiv.innerHTML = '';
-        mapDiv.style.display = "block";
-        if (window._pdfMap && window._pdfMap.remove) window._pdfMap.remove();
-
-        let center = opts.center || {lat: locations[0].lat, lng: locations[0].lng};
-        let zoom = opts.zoom || 18;
-        const map = L.map('allItemsMapForPDF', {
-          center: [center.lat, center.lng],
-          zoom: zoom,
-          zoomControl: false,
-          attributionControl: false,
-          dragging: false,
-          scrollWheelZoom: false,
-          doubleClickZoom: false,
-          boxZoom: false,
-          keyboard: false,
-        });
-        window._pdfMap = map;
-        L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza`, {
-          tileSize: 256, minZoom: 1, maxZoom: 20
-        }).addTo(map);
-
-        // Fit bounds for "auto"
-        if (opts.fit && locations.length > 1) {
-          let latlngs = locations.map(l=>[l.lat, l.lng]);
-          map.fitBounds(latlngs, {padding:[18,18]});
-        }
-        // Auto-offset if too close
-        let offsets = [];
-        let minDist = 0.00010;
-        for (let i=0; i<locations.length; i++) offsets.push({dx:0,dy:0,size:19});
-        for (let i=0; i<locations.length; i++) {
-          for (let j=i+1; j<locations.length; j++) {
-            let dLat = locations[i].lat - locations[j].lat;
-            let dLng = locations[i].lng - locations[j].lng;
-            let dist = Math.sqrt(dLat*dLat + dLng*dLng);
-            if (dist < minDist) {
-              let angle = ((j)/locations.length)*2*Math.PI;
-              let sep = (minDist-dist)*5+0.00016;
-              offsets[j].dx += Math.cos(angle)*sep;
-              offsets[j].dy += Math.sin(angle)*sep;
-              offsets[i].dx -= Math.cos(angle)*sep;
-              offsets[i].dy -= Math.sin(angle)*sep;
-              offsets[i].size = offsets[j].size = 16;
-            }
-          }
-        }
-        locations.forEach((l, idx) => {
-          let o = offsets[idx];
-          const marker = L.marker([l.lat+o.dy, l.lng+o.dx]).addTo(map);
-          const numberIcon = L.divIcon({
-            html: `<div style="background:#213559;color:#fff;border-radius:50%;width:${o.size}px;height:${o.size}px;display:flex;align-items:center;justify-content:center;font-size:${o.size-7}px;border:2px solid #fff;box-shadow:0 2px 7px #223e5b21;">${l.num}</div>`,
-            className: '', iconSize: [o.size,o.size], iconAnchor: [o.size/2,o.size/2]
-          });
-          marker.setIcon(numberIcon);
-        });
+        const container = map.getContainer();
         setTimeout(async () => {
-          await html2canvas(mapDiv, {useCORS:true}).then(canvas => {
-            map.remove(); mapDiv.style.display = "none";
+          await html2canvas(container, {useCORS:true, backgroundColor:null}).then(canvas => {
             pdf.addPage("a4", "landscape");
             const pageWidth = pdf.internal.pageSize.getWidth();
             pdf.setFontSize(18);
@@ -750,7 +639,7 @@
             pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), 'JPEG', imgX, 64, imgWidth, imgHeight);
             resolve();
           });
-        }, 1200);
+        }, 500);
       });
     }
     document.getElementById('reportForm').onsubmit = function(e) {
