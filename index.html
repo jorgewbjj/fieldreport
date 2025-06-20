@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <title>Field Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- MapTiler & Leaflet CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- jsPDF & html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
@@ -172,11 +170,15 @@
       background: #e9e9e9;
       border: 3px solid #eee;
     }
+    .roof-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;}
+    .roof-col { flex:1 1 150px; min-width:140px; }
     @media (max-width:600px) {
       .container { padding: 8vw 2vw; box-shadow: 0 2px 12px rgba(0,0,0,0.09);}
       .item-section {padding:10px;}
       .pictures-preview img {max-width:90px;max-height:68px;}
       #allItemsMapForPDF {width:96vw;height:33vw;}
+      .roof-row {flex-direction:column;}
+      .roof-col {min-width:0;}
     }
     @media (max-width:400px) {
       .field-row, .field-col {flex-direction:column;min-width:0;}
@@ -187,6 +189,38 @@
 <body>
   <div class="container" id="reportMain">
     <h2>Field Report</h2>
+    <!-- ROOF INFO -->
+    <div class="roof-row">
+      <div class="roof-col">
+        <label for="roofCondition">Roof Condition</label>
+        <select id="roofCondition" required>
+          <option value="">Select...</option>
+          <option value="Good">Good</option>
+          <option value="Fair">Fair</option>
+          <option value="Poor">Poor</option>
+        </select>
+      </div>
+      <div class="roof-col">
+        <label for="roofType">Type of Roof</label>
+        <select id="roofType" onchange="showOtherRoofType()" required>
+          <option value="">Select...</option>
+          <option value="PVC">PVC</option>
+          <option value="TPO">TPO</option>
+          <option value="Modified">Modified</option>
+          <option value="Metal">Metal</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="text" id="roofTypeOther" style="display:none;margin-top:5px;" placeholder="Enter type..." />
+      </div>
+      <div class="roof-col">
+        <label for="roofAccess">Roof Access</label>
+        <select id="roofAccess" required>
+          <option value="">Select...</option>
+          <option value="External ladder">External ladder</option>
+          <option value="Roof hatch">Roof hatch</option>
+        </select>
+      </div>
+    </div>
     <form id="reportForm" autocomplete="off">
       <div class="field-row">
         <div class="field-col">
@@ -235,12 +269,17 @@
     </form>
   </div>
   <div id="allItemsMapForPDF"></div>
-  <!-- Leaflet & MapTiler JS -->
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // Show/hide custom roof type
+    function showOtherRoofType() {
+      var rt = document.getElementById('roofType');
+      var rto = document.getElementById('roofTypeOther');
+      if(rt.value === 'Other') rto.style.display = '';
+      else rto.style.display = 'none';
+    }
     // Set today as default date
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
-
     // Address: autofill with user geolocation + reverse geocoding
     window.onload = function() {
       if (navigator.geolocation) {
@@ -248,13 +287,11 @@
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           try {
-            // Use Nominatim for free reverse geocoding (OpenStreetMap)
             const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
             const res = await fetch(url, {headers: { 'Accept': 'application/json' }});
             const data = await res.json();
             if (data && data.address) {
               const a = data.address;
-              // Compose a friendly address: street, number, city, state, postcode, country
               let addr = '';
               if (a.road) addr += a.road;
               if (a.house_number) addr += ' ' + a.house_number;
@@ -267,11 +304,10 @@
               if (a.country) addr += ', ' + a.country;
               document.getElementById('address').value = addr.replace(/^, /,'');
             }
-          } catch (e) { /* silent fail */ }
+          } catch (e) {}
         });
       }
     };
-
     // Technician Dropdown with Add Feature
     const technicianSelect = document.getElementById('technician');
     const addTechPrompt = document.getElementById('addTechPrompt');
@@ -302,7 +338,6 @@
       addTechPrompt.style.display = 'none';
       technicianSelect.value = '';
     };
-
     // Items logic
     let itemIdx = 0;
     function addItem() {
@@ -346,7 +381,6 @@
     function updateDescInline(idx, value) {
       document.getElementById(`desc-inline-${idx}`).textContent = value.trim() || "(no description yet)";
     }
-    // Image preview
     function previewPics(input, itemDivId) {
       const previewDiv = input.parentElement.querySelector('.pictures-preview');
       previewDiv.innerHTML = '';
@@ -362,7 +396,6 @@
         });
       }
     }
-    // MapTiler map logic (uses current position)
     function initMap(mapId, latId, lngId, coordId) {
       const apiKey = "D07LNHRpX8QqmkT39Nza";
       const latInput = document.getElementById(latId);
@@ -415,20 +448,30 @@
       const jsPDF = window.jspdf.jsPDF;
       const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
       let y = 30, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 30;
+      // --- ROOF FIELDS
+      const roofCondition = document.getElementById('roofCondition').value;
+      let roofType = document.getElementById('roofType').value;
+      if(roofType === "Other") roofType = document.getElementById('roofTypeOther').value;
+      const roofAccess = document.getElementById('roofAccess').value;
+      // --- REST
       const address = document.getElementById('address').value;
       const date = document.getElementById('date').value;
       const tech = document.getElementById('technician').value;
       const store = document.getElementById('store').value;
       const storeNum = document.getElementById('storeNum').value;
-      pdf.setFontSize(20);
+      pdf.setFontSize(18);
       pdf.text('Field Report', leftMargin, y);
-      y += 24;
+      y += 20;
       pdf.setFontSize(12);
-      pdf.text(`Address: ${address}`, leftMargin, y += 22);
-      pdf.text(`Date: ${date}`, 340, y);
-      pdf.text(`Technician: ${tech}`, leftMargin, y += 20);
-      pdf.text(`Store: ${store}`, leftMargin, y += 20);
-      pdf.text(`Store Number: ${storeNum}`, 200, y);
+      pdf.text(`Roof Condition: ${roofCondition}`, leftMargin, y += 16);
+      pdf.text(`Type of Roof: ${roofType}`, leftMargin+220, y);
+      pdf.text(`Roof Access: ${roofAccess}`, leftMargin, y += 16);
+      y += 6;
+      pdf.text(`Address: ${address}`, leftMargin, y += 16);
+      pdf.text(`Date: ${date}`, leftMargin+340, y);
+      pdf.text(`Technician: ${tech}`, leftMargin, y += 16);
+      pdf.text(`Store: ${store}`, leftMargin, y += 16);
+      pdf.text(`Store Number: ${storeNum}`, leftMargin+200, y);
       y += 28;
       pdf.setFontSize(15);
       pdf.text('Items', leftMargin, y);
@@ -469,7 +512,6 @@
             pdf.text(`Item #${i+idx+1}: ${desc}`, itemX[idx], baseY);
             pdf.setFontSize(12);
             pdf.text(`Location: ${coord}`, itemX[idx], baseY+18);
-            // Images
             if (images.length) {
               let imgY = baseY+32, imgX = itemX[idx];
               for (let j = 0; j < images.length; j++) {
