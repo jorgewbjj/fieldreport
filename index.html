@@ -5,8 +5,10 @@
   <title>Field Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
   <style>
     :root {
       --main: #377dff;
@@ -20,11 +22,10 @@
     body {
       font-family: 'Inter', Arial, sans-serif;
       background: var(--bg);
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
     }
     .container {
-      max-width: 580px;
+      max-width: 620px;
       margin: 28px auto;
       background: var(--card);
       padding: 18px 6vw 20px 6vw;
@@ -38,150 +39,71 @@
       color: #20243a;
       letter-spacing: -.5px;
     }
-    .field-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-bottom: 14px;
+    .field-row, .roof-row, .addr-row {
+      display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;
     }
-    .field-col {
-      flex: 1 1 140px;
-      min-width: 120px;
+    .field-col, .roof-col, .addr-col {
+      flex: 1 1 120px; min-width: 110px;
     }
+    .addr-col { min-width: 70px;}
     label {
-      font-size: .98rem;
-      font-weight: 500;
-      margin-bottom: 4px;
-      display: block;
-      color: #374151;
+      font-size: .98rem; font-weight: 500; margin-bottom: 4px; display: block; color: #374151;
     }
     input, select, textarea {
-      padding: 10px 12px;
-      border: 1px solid #dde3ed;
-      border-radius: 8px;
-      font-size: 1rem;
-      width: 100%;
-      margin-top: 2px;
-      background: #fcfdfe;
-      transition: border .2s;
+      padding: 10px 12px; border: 1px solid #dde3ed; border-radius: 8px; font-size: 1rem; width: 100%; margin-top: 2px; background: #fcfdfe; transition: border .2s;
     }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--main);
-      background: #f6f8ff;
-    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--main); background: #f6f8ff; }
     input[type="date"] { max-width: 100%; }
-    select { max-width: 100%; }
     button, .add-btn, .remove-btn {
-      cursor: pointer;
-      border: none;
-      color: #fff;
-      background: var(--main);
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 1rem;
-      margin-top: 10px;
-      transition: background .2s;
+      cursor: pointer; border: none; color: #fff; background: var(--main); padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 1rem; margin-top: 10px; transition: background .2s;
     }
     button:hover, .add-btn:hover, .remove-btn:hover { background: var(--main-dark); }
-    .add-btn, .remove-btn {
-      background: #2fc069;
-      margin-top: 10px;
-      padding: 8px 13px;
-      font-size: .95rem;
-    }
+    .add-btn, .remove-btn { background: #2fc069; margin-top: 10px; padding: 8px 13px; font-size: .95rem; }
     .remove-btn { background: #e44; margin-left: 10px; }
     .item-section {
-      background: var(--subtle);
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 16px;
-      position: relative;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+      background: var(--subtle); border-radius: 12px; padding: 15px; margin-bottom: 16px; position: relative; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     }
     .item-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 6px;
+      display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;
     }
-    .item-title {
-      font-weight: 700;
-      font-size: 1.01rem;
-      color: #374151;
-      margin-right: 12px;
-    }
-    .item-desc-inline {
-      font-size: 0.98rem;
-      color: #296fb8;
-      font-weight: 500;
-      max-width: 300px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-top: 1px;
-    }
+    .item-title { font-weight: 700; font-size: 1.01rem; color: #374151; margin-right: 12px; }
+    .item-desc-inline { font-size: 0.98rem; color: #296fb8; font-weight: 500; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
     .pictures-preview {
-      display: flex;
-      gap: 9px;
-      flex-wrap: wrap;
-      margin-bottom: 8px;
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
     }
     .pictures-preview img {
-      max-width: 120px;
-      max-height: 100px;
-      border-radius: 7px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.09);
-      object-fit: cover;
+      max-width: 120px; max-height: 100px; border-radius: 7px; box-shadow: 0 1px 4px rgba(0,0,0,0.09); object-fit: cover;
     }
     .map-container {
-      width: 100%;
-      height: 160px;
-      margin-top: 7px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.03);
+      width: 100%; height: 160px; margin-top: 7px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 5px rgba(0,0,0,0.03);
     }
-    #generatePDF {
-      background: #2b9cf6;
-      margin-top: 18px;
-      width: 100%;
-      padding: 12px;
-      font-size: 1rem;
-    }
-    #addTechPrompt {
-      display: none;
-      margin-top: 7px;
-      gap: 6px;
-    }
+    #generatePDF { background: #2b9cf6; margin-top: 18px; width: 100%; padding: 12px; font-size: 1rem; }
+    #addTechPrompt { display: none; margin-top: 7px; gap: 6px; }
     #addTechPrompt input { width: auto; flex: 2 1 80px;}
     #allItemsMapForPDF {
-      width: 540px;
-      height: 260px;
-      position: absolute;
-      top: -10000px;
-      left: -10000px;
-      z-index: -1;
-      border-radius: 13px;
-      overflow: hidden;
-      background: #e9e9e9;
-      border: 3px solid #eee;
+      width: 540px; height: 260px; position: absolute; top: -10000px; left: -10000px; z-index: -1; border-radius: 13px; overflow: hidden; background: #e9e9e9; border: 3px solid #eee;
     }
-    .roof-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;}
-    .roof-col { flex:1 1 150px; min-width:140px; }
+    /* Cropper Modal */
+    .modal {
+      display:none; position:fixed; z-index:99999; left:0; top:0; width:100vw; height:100vh; overflow:auto; background:rgba(22,35,51,0.63); justify-content:center; align-items:center;
+    }
+    .modal-content {
+      background:#fff; padding:18px 14px 14px 14px; border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.16); min-width:300px; max-width:94vw;
+      display:flex; flex-direction:column; align-items:center;
+    }
+    .cropper-container { max-width: 92vw; max-height: 55vh;}
+    .modal-actions { margin-top:12px; display:flex; gap:12px;}
     @media (max-width:600px) {
       .container { padding: 8vw 2vw; box-shadow: 0 2px 12px rgba(0,0,0,0.09);}
       .item-section {padding:10px;}
-      .pictures-preview img {max-width:90px;max-height:68px;}
+      .pictures-preview img {max-width:95px;max-height:70px;}
       #allItemsMapForPDF {width:96vw;height:33vw;}
-      .roof-row {flex-direction:column;}
-      .roof-col {min-width:0;}
+      .roof-row, .field-row, .addr-row {flex-direction:column;}
+      .roof-col, .field-col, .addr-col {min-width:0;}
+      .modal-content {max-width:98vw;}
     }
     @media (max-width:400px) {
-      .field-row, .field-col {flex-direction:column;min-width:0;}
+      .field-row, .field-col, .roof-row, .roof-col, .addr-row, .addr-col {flex-direction:column;min-width:0;}
       input, select, textarea {font-size: .98rem;}
     }
   </style>
@@ -222,14 +144,34 @@
       </div>
     </div>
     <form id="reportForm" autocomplete="off">
-      <div class="field-row">
-        <div class="field-col">
-          <label for="address">Address</label>
-          <input type="text" id="address" name="address" required placeholder="Enter address" />
+      <div class="addr-row">
+        <div class="addr-col">
+          <label for="street">Street</label>
+          <input type="text" id="street" required />
         </div>
-        <div class="field-col">
+        <div class="addr-col">
+          <label for="number">Number</label>
+          <input type="text" id="number" required />
+        </div>
+        <div class="addr-col">
+          <label for="city">City</label>
+          <input type="text" id="city" required />
+        </div>
+        <div class="addr-col">
+          <label for="state">State</label>
+          <input type="text" id="state" required />
+        </div>
+        <div class="addr-col">
+          <label for="zip">Zip</label>
+          <input type="text" id="zip" required />
+        </div>
+        <div class="addr-col">
+          <label for="country">Country</label>
+          <input type="text" id="country" required />
+        </div>
+        <div class="addr-col">
           <label for="date">Date</label>
-          <input type="date" id="date" name="date" required />
+          <input type="date" id="date" required />
         </div>
       </div>
       <div class="field-row">
@@ -269,6 +211,18 @@
     </form>
   </div>
   <div id="allItemsMapForPDF"></div>
+  <!-- Cropper Modal -->
+  <div class="modal" id="cropperModal">
+    <div class="modal-content">
+      <div style="margin-bottom:8px;font-weight:600;">Crop & Rotate Image</div>
+      <img id="cropperImage" style="max-width:96vw;max-height:50vh;">
+      <div class="modal-actions">
+        <button type="button" onclick="rotateCropper()">Rotate</button>
+        <button type="button" onclick="confirmCropper()">OK</button>
+        <button type="button" onclick="cancelCropper()">Cancel</button>
+      </div>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // Show/hide custom roof type
@@ -280,7 +234,8 @@
     }
     // Set today as default date
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
-    // Address: autofill with user geolocation + reverse geocoding
+
+    // Autofill address by geolocation + OpenStreetMap reverse geocode
     window.onload = function() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async function(pos) {
@@ -292,22 +247,18 @@
             const data = await res.json();
             if (data && data.address) {
               const a = data.address;
-              let addr = '';
-              if (a.road) addr += a.road;
-              if (a.house_number) addr += ' ' + a.house_number;
-              if (a.suburb) addr += ', ' + a.suburb;
-              if (a.city) addr += ', ' + a.city;
-              else if (a.town) addr += ', ' + a.town;
-              else if (a.village) addr += ', ' + a.village;
-              if (a.state) addr += ', ' + a.state;
-              if (a.postcode) addr += ', ' + a.postcode;
-              if (a.country) addr += ', ' + a.country;
-              document.getElementById('address').value = addr.replace(/^, /,'');
+              document.getElementById('street').value = a.road||'';
+              document.getElementById('number').value = a.house_number||'';
+              document.getElementById('city').value = a.city||a.town||a.village||'';
+              document.getElementById('state').value = a.state||'';
+              document.getElementById('zip').value = a.postcode||'';
+              document.getElementById('country').value = a.country||'';
             }
           } catch (e) {}
         });
       }
     };
+
     // Technician Dropdown with Add Feature
     const technicianSelect = document.getElementById('technician');
     const addTechPrompt = document.getElementById('addTechPrompt');
@@ -338,7 +289,8 @@
       addTechPrompt.style.display = 'none';
       technicianSelect.value = '';
     };
-    // Items logic
+
+    // Item logic & cropper handling
     let itemIdx = 0;
     function addItem() {
       itemIdx++;
@@ -360,7 +312,8 @@
           </div>
           <div style="flex:1 1 100px">
             <label>Pictures</label>
-            <input type="file" name="itemPics${itemIdx}" accept="image/*" multiple onchange="previewPics(this, '${div.id}')"/>
+            <input type="file" name="itemPics${itemIdx}" accept="image/*" multiple
+              onchange="handleImageInput(event, ${itemIdx})" />
             <div class="pictures-preview" id="picPreview${itemIdx}"></div>
           </div>
         </div>
@@ -374,6 +327,8 @@
       `;
       container.appendChild(div);
       initMap('map'+itemIdx, 'lat'+itemIdx, 'lng'+itemIdx, 'coord'+itemIdx);
+      // Picture store (in memory)
+      div.croppedImages = [];
     }
     function removeItem(id) {
       document.getElementById(id).remove();
@@ -381,37 +336,70 @@
     function updateDescInline(idx, value) {
       document.getElementById(`desc-inline-${idx}`).textContent = value.trim() || "(no description yet)";
     }
-    function previewPics(input, itemDivId) {
-      const previewDiv = input.parentElement.querySelector('.pictures-preview');
-      previewDiv.innerHTML = '';
-      if (input.files) {
-        Array.from(input.files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            previewDiv.appendChild(img);
-          };
-          reader.readAsDataURL(file);
-        });
+
+    // IMAGE CROPPER POPUP LOGIC
+    let cropper = null, cropperFile = null, cropperItemId = null, cropperImgs = [], cropperImgsIdx = 0, cropperInput = null;
+    async function handleImageInput(e, itemIdx) {
+      cropperInput = e.target;
+      const files = Array.from(cropperInput.files);
+      cropperImgs = files;
+      cropperImgsIdx = 0;
+      cropperItemId = itemIdx;
+      if (files.length > 0) openCropperForFile(files[0]);
+    }
+    function openCropperForFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('cropperImage').src = evt.target.result;
+        document.getElementById('cropperModal').style.display = 'flex';
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(document.getElementById('cropperImage'), { aspectRatio: NaN, viewMode:1, autoCropArea:1 });
+      };
+      reader.readAsDataURL(file);
+    }
+    function rotateCropper() {
+      if (cropper) cropper.rotate(90);
+    }
+    async function confirmCropper() {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({maxWidth:1800,maxHeight:1800,fillColor:'#fff'});
+      const dataUrl = canvas.toDataURL("image/jpeg",0.92);
+      saveCroppedImgToPreview(dataUrl, cropperItemId);
+      cropperImgsIdx++;
+      if (cropperImgsIdx < cropperImgs.length) {
+        cropper.destroy(); cropper = null;
+        openCropperForFile(cropperImgs[cropperImgsIdx]);
+      } else {
+        cropper.destroy(); cropper = null;
+        document.getElementById('cropperModal').style.display = 'none';
       }
     }
+    function cancelCropper() {
+      if (cropper) cropper.destroy();
+      cropper = null;
+      document.getElementById('cropperModal').style.display = 'none';
+    }
+    function saveCroppedImgToPreview(dataUrl, itemIdx) {
+      const itemDiv = document.getElementById('item'+itemIdx);
+      if (!itemDiv.croppedImages) itemDiv.croppedImages = [];
+      itemDiv.croppedImages.push(dataUrl);
+      const previewDiv = itemDiv.querySelector('.pictures-preview');
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      previewDiv.appendChild(img);
+    }
+
+    // Map logic (same as before)
     function initMap(mapId, latId, lngId, coordId) {
       const apiKey = "D07LNHRpX8QqmkT39Nza";
       const latInput = document.getElementById(latId);
       const lngInput = document.getElementById(lngId);
       const coordSpan = document.getElementById(coordId);
       function showMap(lat, lng) {
-        const map = L.map(mapId, {
-          center: [lat, lng],
-          zoom: 17,
-          zoomControl: true
-        });
+        const map = L.map(mapId, {center: [lat, lng],zoom: 17,zoomControl: true});
         L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${apiKey}`, {
           attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a>',
-          tileSize: 256,
-          minZoom: 1,
-          maxZoom: 20
+          tileSize: 256,minZoom: 1,maxZoom: 20
         }).addTo(map);
         let marker = null;
         if (latInput.value && lngInput.value) {
@@ -443,35 +431,57 @@
         showMap(-22.9068, -43.1729);
       }
     }
-    // PDF generation with all-item map at the end (items: 2 per row if both have ≤2 images)
+
+    // PDF GENERATION (address separated, big images, 2 per row)
     document.getElementById('generatePDF').onclick = async function() {
       const jsPDF = window.jspdf.jsPDF;
       const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
       let y = 30, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 30;
+
       // --- ROOF FIELDS
       const roofCondition = document.getElementById('roofCondition').value;
       let roofType = document.getElementById('roofType').value;
       if(roofType === "Other") roofType = document.getElementById('roofTypeOther').value;
       const roofAccess = document.getElementById('roofAccess').value;
-      // --- REST
-      const address = document.getElementById('address').value;
+
+      // --- ADDRESS FIELDS
+      const street = document.getElementById('street').value;
+      const number = document.getElementById('number').value;
+      const city = document.getElementById('city').value;
+      const state = document.getElementById('state').value;
+      const zip = document.getElementById('zip').value;
+      const country = document.getElementById('country').value;
       const date = document.getElementById('date').value;
+
+      // --- REST
       const tech = document.getElementById('technician').value;
       const store = document.getElementById('store').value;
       const storeNum = document.getElementById('storeNum').value;
+
       pdf.setFontSize(18);
       pdf.text('Field Report', leftMargin, y);
       y += 20;
       pdf.setFontSize(12);
       pdf.text(`Roof Condition: ${roofCondition}`, leftMargin, y += 16);
-      pdf.text(`Type of Roof: ${roofType}`, leftMargin+220, y);
+      pdf.text(`Type of Roof: ${roofType}`, leftMargin+210, y);
       pdf.text(`Roof Access: ${roofAccess}`, leftMargin, y += 16);
-      y += 6;
-      pdf.text(`Address: ${address}`, leftMargin, y += 16);
-      pdf.text(`Date: ${date}`, leftMargin+340, y);
-      pdf.text(`Technician: ${tech}`, leftMargin, y += 16);
-      pdf.text(`Store: ${store}`, leftMargin, y += 16);
+      y += 4;
+      // Address block
+      pdf.setFontSize(13);
+      pdf.text('Address:', leftMargin, y += 22);
+      pdf.setFontSize(12);
+      pdf.text(`Street: ${street}`, leftMargin, y += 18);
+      pdf.text(`Number: ${number}`, leftMargin+230, y);
+      pdf.text(`City: ${city}`, leftMargin, y += 18);
+      pdf.text(`State: ${state}`, leftMargin+230, y);
+      pdf.text(`Zip: ${zip}`, leftMargin, y += 18);
+      pdf.text(`Country: ${country}`, leftMargin+230, y);
+      y += 4;
+      pdf.text(`Date: ${date}`, leftMargin, y += 20);
+      pdf.text(`Technician: ${tech}`, leftMargin, y += 18);
+      pdf.text(`Store: ${store}`, leftMargin, y += 18);
       pdf.text(`Store Number: ${storeNum}`, leftMargin+200, y);
+
       y += 28;
       pdf.setFontSize(15);
       pdf.text('Items', leftMargin, y);
@@ -482,29 +492,20 @@
       while (i < itemSections.length) {
         let secA = itemSections[i];
         let secB = (i+1 < itemSections.length) ? itemSections[i+1] : null;
-        let imagesA = secA.querySelector('input[type="file"]').files || [];
-        let imagesB = secB ? secB.querySelector('input[type="file"]').files || [] : [];
         let descA = secA.querySelector('textarea').value;
         let descB = secB ? secB.querySelector('textarea').value : "";
-        let canFitTwo = secB && imagesA.length <= 2 && imagesB.length <= 2;
-        let rowHeight = 0;
+        let imgsA = secA.croppedImages || [];
+        let imgsB = secB ? (secB.croppedImages || []) : [];
+        let canFitTwo = secB && imgsA.length <= 2 && imgsB.length <= 2;
+        let rowHeight = 230;
+        // --- PAGE BREAK if needed
+        if (y + rowHeight > pageHeight - 60) { pdf.addPage(); y = 30;}
         if (canFitTwo) {
-          rowHeight = 140 + (Math.max(imagesA.length, imagesB.length) > 0 ? 130 : 70);
-        } else {
-          rowHeight = 140 + (imagesA.length > 0 ? 130 : 70);
-        }
-        if (y + rowHeight > pageHeight - 60) {
-          pdf.addPage();
-          y = 30;
-        }
-        if (canFitTwo) {
-          let itemX = [leftMargin, leftMargin+245];
-          [secA, secB].forEach(async (sec, idx) => {
+          let itemX = [leftMargin, leftMargin+265];
+          [secA, secB].forEach((sec, idx) => {
             const baseY = y + 15;
             const desc = sec.querySelector('textarea').value;
             const coord = sec.querySelector('[id^="coord"]').textContent;
-            const imgInput = sec.querySelector('input[type="file"]');
-            const images = imgInput ? imgInput.files : [];
             const lat = sec.querySelector('[id^="lat"]').value;
             const lng = sec.querySelector('[id^="lng"]').value;
             if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+idx+1});
@@ -512,13 +513,11 @@
             pdf.text(`Item #${i+idx+1}: ${desc}`, itemX[idx], baseY);
             pdf.setFontSize(12);
             pdf.text(`Location: ${coord}`, itemX[idx], baseY+18);
-            if (images.length) {
-              let imgY = baseY+32, imgX = itemX[idx];
-              for (let j = 0; j < images.length; j++) {
-                const dataUrl = await fileToDataURL(images[j]);
-                pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
-                imgY += 120;
-              }
+            // Big images, side by side
+            let imgY = baseY+35, imgX = itemX[idx];
+            const imgs = sec.croppedImages || [];
+            for (let j = 0; j < imgs.length && j < 2; j++) {
+              pdf.addImage(imgs[j], 'JPEG', imgX+(j*120), imgY, 110, 95);
             }
           });
           y += rowHeight;
@@ -527,8 +526,6 @@
           const baseY = y + 15;
           const desc = secA.querySelector('textarea').value;
           const coord = secA.querySelector('[id^="coord"]').textContent;
-          const imgInput = secA.querySelector('input[type="file"]');
-          const images = imgInput ? imgInput.files : [];
           const lat = secA.querySelector('[id^="lat"]').value;
           const lng = secA.querySelector('[id^="lng"]').value;
           if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
@@ -536,41 +533,25 @@
           pdf.text(`Item #${i+1}: ${desc}`, leftMargin, baseY);
           pdf.setFontSize(12);
           pdf.text(`Location: ${coord}`, leftMargin, baseY+18);
-          if (images.length) {
-            let imgY = baseY+32, imgX = leftMargin;
-            for (let j = 0; j < images.length && j < 2; j++) {
-              const dataUrl = await fileToDataURL(images[j]);
-              pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
-              imgX += 155;
+          // Big images, 2 per row
+          let imgY = baseY+35, imgX = leftMargin;
+          const imgs = secA.croppedImages || [];
+          for (let j = 0; j < imgs.length; j+=2) {
+            if (imgY+110 > pageHeight-60) { pdf.addPage(); imgY = 30; }
+            for (let k=0;k<2 && (j+k)<imgs.length;k++) {
+              pdf.addImage(imgs[j+k], 'JPEG', imgX+k*120, imgY, 110, 95);
             }
-            imgY += 120;
-            if (images.length > 2) {
-              imgX = leftMargin;
-              for (let j = 2; j < images.length; j++) {
-                const dataUrl = await fileToDataURL(images[j]);
-                pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
-                imgX += 155;
-              }
-              imgY += 120;
-            }
+            imgY += 110;
           }
           y += rowHeight;
           i += 1;
         }
       }
-      if (locations.length > 0) {
-        await generateAllItemsMapPDF(locations, pdf);
-      }
+      // All-items map at end
+      if (locations.length > 0) await generateAllItemsMapPDF(locations, pdf);
       pdf.save(`field-report-${date}.pdf`);
     };
-    function fileToDataURL(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(e) { resolve(e.target.result); };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
+
     async function generateAllItemsMapPDF(locations, pdf) {
       return new Promise((resolve) => {
         const mapDiv = document.getElementById('allItemsMapForPDF');
@@ -582,36 +563,25 @@
         avgLat /= locations.length;
         avgLng /= locations.length;
         const map = L.map('allItemsMapForPDF', {
-          center: [avgLat, avgLng],
-          zoom: 17,
-          zoomControl: false,
-          attributionControl: false,
-          dragging: false,
-          scrollWheelZoom: false,
-          doubleClickZoom: false,
-          boxZoom: false,
-          keyboard: false,
+          center: [avgLat, avgLng], zoom: 17, zoomControl: false,
+          attributionControl: false, dragging: false, scrollWheelZoom: false,
+          doubleClickZoom: false, boxZoom: false, keyboard: false,
         });
         window._pdfMap = map;
         L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza`, {
-          tileSize: 256,
-          minZoom: 1,
-          maxZoom: 20
+          tileSize: 256, minZoom: 1, maxZoom: 20
         }).addTo(map);
         locations.forEach((l, idx) => {
           const marker = L.marker([l.lat, l.lng]).addTo(map);
           const numberIcon = L.divIcon({
             html: `<div style="background:#2b9cf6;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid #fff;">${l.num}</div>`,
-            className: '',
-            iconSize: [30,30],
-            iconAnchor: [15,15]
+            className: '', iconSize: [30,30], iconAnchor: [15,15]
           });
           marker.setIcon(numberIcon);
         });
         setTimeout(async () => {
           await html2canvas(mapDiv, {useCORS:true}).then(canvas => {
-            map.remove();
-            mapDiv.style.display = "none";
+            map.remove(); mapDiv.style.display = "none";
             pdf.addPage("a4", "landscape");
             const pageWidth = pdf.internal.pageSize.getWidth();
             pdf.setFontSize(18);
@@ -626,6 +596,7 @@
         }, 1200);
       });
     }
+
     document.getElementById('reportForm').onsubmit = function(e) {
       e.preventDefault();
       alert("Report submitted! (Handle save/export logic here)");
