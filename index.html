@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- MapTiler & Leaflet CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- jsPDF & html2canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     body {
       font-family: 'Inter', Arial, sans-serif;
@@ -98,14 +101,26 @@
       overflow: hidden;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
+    #generatePDF {
+      background: #2b9cf6;
+      margin-top: 22px;
+      width: 100%;
+    }
     @media (max-width: 700px) {
       .container { max-width: 98vw; padding: 8vw 2vw; }
       .map-container { height: 160px; }
     }
+    /* Hide prompt by default */
+    #addTechPrompt {
+      display: none;
+      margin-top: 7px;
+      gap: 6px;
+    }
+    #addTechPrompt input { width: auto; flex: 2 1 80px;}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="reportMain">
     <h2>Field Report</h2>
     <form id="reportForm" autocomplete="off">
       <div class="field-row">
@@ -121,16 +136,18 @@
       <div class="field-row">
         <div style="flex:1 1 180px">
           <label for="technician">Technician</label>
-          <div style="display: flex; gap:8px;">
-            <select id="technician" name="technician" required>
-              <option value="">Select...</option>
-              <option value="Arister">Arister</option>
-              <option value="David">David</option>
-              <option value="Elias">Elias</option>
-              <option value="Wilman">Wilman</option>
-            </select>
-            <input type="text" id="addTechInput" placeholder="Add technician" style="flex:2 1 100px;"/>
-            <button type="button" id="addTechBtn" style="background:#6a4cff;">Add</button>
+          <select id="technician" name="technician" required>
+            <option value="">Select...</option>
+            <option value="Arister">Arister</option>
+            <option value="David">David</option>
+            <option value="Elias">Elias</option>
+            <option value="Wilman">Wilman</option>
+            <option value="add-tech">Add technician…</option>
+          </select>
+          <div id="addTechPrompt" style="display: flex; align-items: center;">
+            <input type="text" id="addTechInput" placeholder="Technician name"/>
+            <button type="button" id="addTechBtn" style="background:#6a4cff; padding: 7px 15px; width:auto;">Add</button>
+            <button type="button" id="cancelTechBtn" style="background:#aaa; padding: 7px 12px; width:auto;">Cancel</button>
           </div>
         </div>
         <div style="flex:1 1 180px">
@@ -148,9 +165,9 @@
       <h3 style="margin-bottom:0;">Items</h3>
       <div id="itemsContainer"></div>
       <button type="button" class="add-btn" onclick="addItem()">+ Add Item</button>
-
       <div style="margin-top:30px;">
         <button type="submit">Submit Report</button>
+        <button type="button" id="generatePDF">Generate PDF</button>
       </div>
     </form>
   </div>
@@ -161,28 +178,40 @@
     // Set today as default date
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
 
-    // Add technician feature
-    document.getElementById('addTechBtn').onclick = function() {
-      const input = document.getElementById('addTechInput');
-      const val = input.value.trim();
-      if (val) {
-        const select = document.getElementById('technician');
-        let exists = false;
-        for (let opt of select.options) if (opt.value.toLowerCase() === val.toLowerCase()) exists = true;
-        if (!exists) {
-          const newOpt = document.createElement('option');
-          newOpt.value = val;
-          newOpt.textContent = val;
-          select.appendChild(newOpt);
-          select.value = val;
-          input.value = '';
-        } else {
-          select.value = val;
-        }
+    // --- Technician Dropdown with Add Feature ---
+    const technicianSelect = document.getElementById('technician');
+    const addTechPrompt = document.getElementById('addTechPrompt');
+    const addTechInput = document.getElementById('addTechInput');
+    const addTechBtn = document.getElementById('addTechBtn');
+    const cancelTechBtn = document.getElementById('cancelTechBtn');
+
+    technicianSelect.onchange = function() {
+      if (technicianSelect.value === 'add-tech') {
+        addTechPrompt.style.display = 'flex';
+        addTechInput.focus();
+      } else {
+        addTechPrompt.style.display = 'none';
       }
     };
+    addTechBtn.onclick = function() {
+      const name = addTechInput.value.trim();
+      if (name) {
+        // Insert before the last option ("Add technician…")
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        technicianSelect.insertBefore(option, technicianSelect.options[technicianSelect.options.length-1]);
+        technicianSelect.value = name;
+        addTechPrompt.style.display = 'none';
+        addTechInput.value = '';
+      }
+    };
+    cancelTechBtn.onclick = function() {
+      addTechPrompt.style.display = 'none';
+      technicianSelect.value = '';
+    };
 
-    // Items logic
+    // --- Items logic ---
     let itemIdx = 0;
     function addItem() {
       itemIdx++;
@@ -222,7 +251,7 @@
       document.getElementById(id).remove();
     }
 
-    // Image preview
+    // --- Image preview ---
     function previewPics(input, itemDivId) {
       const previewDiv = input.parentElement.querySelector('.pictures-preview');
       previewDiv.innerHTML = '';
@@ -239,54 +268,139 @@
       }
     }
 
-    // MapTiler map logic (shows marker as soon as coordinates are picked or present)
+    // --- MapTiler map logic (uses current position) ---
     function initMap(mapId, latId, lngId, coordId) {
       const apiKey = "D07LNHRpX8QqmkT39Nza";
       const latInput = document.getElementById(latId);
       const lngInput = document.getElementById(lngId);
       const coordSpan = document.getElementById(coordId);
 
-      // Set default center
-      let defaultLat = -22.9068, defaultLng = -43.1729; // Rio de Janeiro as default
+      // Use current location if available, otherwise fallback
+      function showMap(lat, lng) {
+        const map = L.map(mapId, {
+          center: [lat, lng],
+          zoom: 17,
+          zoomControl: true
+        });
+        L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${apiKey}`, {
+          attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a>',
+          tileSize: 256,
+          minZoom: 1,
+          maxZoom: 20
+        }).addTo(map);
 
-      // If coords are already set, center map and show marker
-      if (latInput.value && lngInput.value) {
-        defaultLat = parseFloat(latInput.value);
-        defaultLng = parseFloat(lngInput.value);
+        let marker = null;
+
+        // Place marker if input has coords (e.g., after page reload/future version)
+        if (latInput.value && lngInput.value) {
+          marker = L.marker([parseFloat(latInput.value), parseFloat(lngInput.value)]).addTo(map);
+          coordSpan.textContent = `${parseFloat(latInput.value).toFixed(6)}, ${parseFloat(lngInput.value).toFixed(6)}`;
+        } else {
+          marker = L.marker([lat, lng]).addTo(map);
+          latInput.value = lat;
+          lngInput.value = lng;
+          coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+        map.on('click', function(e) {
+          const {lat, lng} = e.latlng;
+          if (marker) marker.setLatLng(e.latlng);
+          else marker = L.marker(e.latlng).addTo(map);
+          latInput.value = lat;
+          lngInput.value = lng;
+          coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        });
+        setTimeout(() => { map.invalidateSize(); }, 250);
       }
-      const map = L.map(mapId, {
-        center: [defaultLat, defaultLng],
-        zoom: 15,
-        zoomControl: true
-      });
-      L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${apiKey}`, {
-        attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a>',
-        tileSize: 256,
-        minZoom: 1,
-        maxZoom: 20
-      }).addTo(map);
 
-      let marker = null;
-
-      // If already set, show marker
-      if (latInput.value && lngInput.value) {
-        marker = L.marker([parseFloat(latInput.value), parseFloat(lngInput.value)]).addTo(map);
-        coordSpan.textContent = `${parseFloat(latInput.value).toFixed(6)}, ${parseFloat(lngInput.value).toFixed(6)}`;
+      // Get current location (GPS) if possible
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          showMap(pos.coords.latitude, pos.coords.longitude);
+        }, function() {
+          showMap(-22.9068, -43.1729); // Fallback: Rio de Janeiro
+        });
+      } else {
+        showMap(-22.9068, -43.1729); // Fallback: Rio de Janeiro
       }
-
-      map.on('click', function(e) {
-        const {lat, lng} = e.latlng;
-        if (marker) marker.setLatLng(e.latlng);
-        else marker = L.marker(e.latlng).addTo(map);
-        latInput.value = lat;
-        lngInput.value = lng;
-        coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      });
-
-      setTimeout(() => { map.invalidateSize(); }, 250);
     }
 
-    // Dummy submit
+    // --- PDF generation ---
+    document.getElementById('generatePDF').onclick = async function() {
+      const jsPDF = window.jspdf.jsPDF;
+      const pdf = new jsPDF({ unit: 'px', format: 'a4' });
+      let y = 30;
+      const form = document.getElementById('reportForm');
+      const address = document.getElementById('address').value;
+      const date = document.getElementById('date').value;
+      const tech = document.getElementById('technician').value;
+      const store = document.getElementById('store').value;
+      const storeNum = document.getElementById('storeNum').value;
+
+      pdf.setFontSize(20);
+      pdf.text('Field Report', 30, y);
+      y += 24;
+      pdf.setFontSize(12);
+      pdf.text(`Address: ${address}`, 30, y += 22);
+      pdf.text(`Date: ${date}`, 340, y);
+      pdf.text(`Technician: ${tech}`, 30, y += 20);
+      pdf.text(`Store: ${store}`, 30, y += 20);
+      pdf.text(`Store Number: ${storeNum}`, 200, y);
+
+      // Items
+      y += 28;
+      pdf.setFontSize(15);
+      pdf.text('Items', 30, y);
+      y += 10;
+      const itemSections = document.querySelectorAll('.item-section');
+      for (let i = 0; i < itemSections.length; i++) {
+        const sec = itemSections[i];
+        const desc = sec.querySelector('textarea').value;
+        const coord = sec.querySelector('[id^="coord"]').textContent;
+        const imgInput = sec.querySelector('input[type="file"]');
+        const images = imgInput ? imgInput.files : [];
+        y += 24;
+        pdf.setFontSize(13);
+        pdf.text(`Item #${i+1}:`, 30, y);
+        y += 16;
+        pdf.setFontSize(12);
+        pdf.text(`Description: ${desc}`, 40, y);
+        y += 16;
+        pdf.text(`Location: ${coord}`, 40, y);
+
+        // Pictures
+        if (images.length) {
+          y += 12;
+          let ximg = 40;
+          for (let j = 0; j < images.length; j++) {
+            const imgFile = images[j];
+            if (imgFile && imgFile.type.startsWith('image/')) {
+              try {
+                const dataUrl = await fileToDataURL(imgFile);
+                // Keep image size manageable in PDF
+                pdf.addImage(dataUrl, 'JPEG', ximg, y, 60, 48);
+                ximg += 65;
+              } catch (e) {}
+            }
+          }
+          y += 54;
+        }
+        y += 6;
+        if (y > 760) { pdf.addPage(); y = 30; }
+      }
+      pdf.save(`field-report-${date}.pdf`);
+    };
+
+    // Utility: File to DataURL
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) { resolve(e.target.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // --- Dummy submit ---
     document.getElementById('reportForm').onsubmit = function(e) {
       e.preventDefault();
       alert("Report submitted! (Handle save/export logic here)");
