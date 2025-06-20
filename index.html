@@ -44,11 +44,7 @@
       text-align: center;
       text-shadow: 0 2px 8px #e2e6ee99;
     }
-    /* Big selected logo above form */
-    #bigLogoWrap {
-      text-align: center;
-      margin-bottom: 12px;
-    }
+    #bigLogoWrap { text-align: center; margin-bottom: 12px; }
     #bigLogo {
       max-width: 240px;
       width: 98%;
@@ -304,6 +300,16 @@
       <h3 style="margin-bottom:0;font-size:1.10rem;">Items</h3>
       <div id="itemsContainer"></div>
       <button type="button" class="add-btn" onclick="addItem()">+ Add Item</button>
+      <!-- MAP DISPLAY OPTIONS -->
+      <div style="margin-top:25px; margin-bottom:10px;">
+        <label style="font-weight:700; color:#22395e; margin-bottom:6px; display:block;">Overview Map Display in PDF</label>
+        <div id="mapDisplayOpts" style="display:flex; gap:15px; flex-wrap:wrap;">
+          <label><input type="radio" name="mapDisplay" value="auto" checked> Auto Fit All Markers</label>
+          <label><input type="radio" name="mapDisplay" value="center"> Center on Building</label>
+          <label><input type="radio" name="mapDisplay" value="zoomout"> Zoomed Out (Show Area)</label>
+          <label><input type="radio" name="mapDisplay" value="closeup"> Close-up (Show Details)</label>
+        </div>
+      </div>
       <div style="margin-top:18px;">
         <button type="submit">Submit Report</button>
         <button type="button" id="generatePDF">Generate PDF</button>
@@ -639,7 +645,22 @@
         }
         y = imgY+2;
       }
-      if (locations.length > 0) await generateAllItemsMapPDF(locations, pdf, {center:{lat:locations[0].lat,lng:locations[0].lng}});
+      // --- OVERVIEW MAP OPTIONS ---
+      let mapOption = document.querySelector('input[name="mapDisplay"]:checked').value;
+      let mapOpts = {};
+      if(mapOption === "center") {
+        mapOpts.center = {lat:locations[0].lat, lng:locations[0].lng};
+        mapOpts.zoom = 18;
+      } else if(mapOption === "zoomout") {
+        mapOpts.center = {lat:locations[0].lat, lng:locations[0].lng};
+        mapOpts.zoom = 16;
+      } else if(mapOption === "closeup") {
+        mapOpts.center = {lat:locations[0].lat, lng:locations[0].lng};
+        mapOpts.zoom = 20;
+      } else {
+        mapOpts.fit = true; // auto-fit all markers
+      }
+      if (locations.length > 0) await generateAllItemsMapPDF(locations, pdf, mapOpts);
       pdf.save(`field-report-${date}.pdf`);
     };
     function getImageDataUrl(url) {
@@ -656,23 +677,36 @@
         img.src = url;
       });
     }
-    // Map markers with small numbers, forced centralization
     async function generateAllItemsMapPDF(locations, pdf, opts={}) {
       return new Promise((resolve) => {
         const mapDiv = document.getElementById('allItemsMapForPDF');
         mapDiv.innerHTML = '';
         mapDiv.style.display = "block";
         if (window._pdfMap && window._pdfMap.remove) window._pdfMap.remove();
+
         let center = opts.center || {lat: locations[0].lat, lng: locations[0].lng};
+        let zoom = opts.zoom || 18;
         const map = L.map('allItemsMapForPDF', {
-          center: [center.lat, center.lng], zoom: 18, zoomControl: false,
-          attributionControl: false, dragging: false, scrollWheelZoom: false,
-          doubleClickZoom: false, boxZoom: false, keyboard: false,
+          center: [center.lat, center.lng],
+          zoom: zoom,
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
         });
         window._pdfMap = map;
         L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza`, {
           tileSize: 256, minZoom: 1, maxZoom: 20
         }).addTo(map);
+
+        // Fit bounds for "auto"
+        if (opts.fit && locations.length > 1) {
+          let latlngs = locations.map(l=>[l.lat, l.lng]);
+          map.fitBounds(latlngs, {padding:[18,18]});
+        }
         // Auto-offset if too close
         let offsets = [];
         let minDist = 0.00010;
