@@ -102,7 +102,30 @@
       position: relative;
       box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     }
-    .item-section h4 { margin:0 0 7px 0; font-size:1.02rem;}
+    .item-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .item-title {
+      font-weight: 700;
+      font-size: 1.01rem;
+      color: #374151;
+      margin-right: 12px;
+    }
+    .item-desc-inline {
+      font-size: 0.98rem;
+      color: #296fb8;
+      font-weight: 500;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 1px;
+    }
     .pictures-preview {
       display: flex;
       gap: 9px;
@@ -217,6 +240,38 @@
   <script>
     // Set today as default date
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
+
+    // Address: autofill with user geolocation + reverse geocoding
+    window.onload = function() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async function(pos) {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          try {
+            // Use Nominatim for free reverse geocoding (OpenStreetMap)
+            const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+            const res = await fetch(url, {headers: { 'Accept': 'application/json' }});
+            const data = await res.json();
+            if (data && data.address) {
+              const a = data.address;
+              // Compose a friendly address: street, number, city, state, postcode, country
+              let addr = '';
+              if (a.road) addr += a.road;
+              if (a.house_number) addr += ' ' + a.house_number;
+              if (a.suburb) addr += ', ' + a.suburb;
+              if (a.city) addr += ', ' + a.city;
+              else if (a.town) addr += ', ' + a.town;
+              else if (a.village) addr += ', ' + a.village;
+              if (a.state) addr += ', ' + a.state;
+              if (a.postcode) addr += ', ' + a.postcode;
+              if (a.country) addr += ', ' + a.country;
+              document.getElementById('address').value = addr.replace(/^, /,'');
+            }
+          } catch (e) { /* silent fail */ }
+        });
+      }
+    };
+
     // Technician Dropdown with Add Feature
     const technicianSelect = document.getElementById('technician');
     const addTechPrompt = document.getElementById('addTechPrompt');
@@ -247,6 +302,7 @@
       addTechPrompt.style.display = 'none';
       technicianSelect.value = '';
     };
+
     // Items logic
     let itemIdx = 0;
     function addItem() {
@@ -256,14 +312,16 @@
       div.className = 'item-section';
       div.id = 'item'+itemIdx;
       div.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h4>Item #${itemIdx}</h4>
+        <div class="item-header-row">
+          <span class="item-title">Item #${itemIdx}:</span>
+          <span class="item-desc-inline" id="desc-inline-${itemIdx}">(no description yet)</span>
           <button type="button" class="remove-btn" onclick="removeItem('${div.id}')">Remove</button>
         </div>
         <div class="field-row">
           <div style="flex:2 1 200px">
             <label>Description</label>
-            <textarea name="itemDesc${itemIdx}" placeholder="Describe the item..." rows="2" required></textarea>
+            <textarea name="itemDesc${itemIdx}" placeholder="Describe the item..." rows="2" required
+              oninput="updateDescInline(${itemIdx}, this.value)"></textarea>
           </div>
           <div style="flex:1 1 100px">
             <label>Pictures</label>
@@ -284,6 +342,9 @@
     }
     function removeItem(id) {
       document.getElementById(id).remove();
+    }
+    function updateDescInline(idx, value) {
+      document.getElementById(`desc-inline-${idx}`).textContent = value.trim() || "(no description yet)";
     }
     // Image preview
     function previewPics(input, itemDivId) {
@@ -376,16 +437,15 @@
       const locations = [];
       let i = 0;
       while (i < itemSections.length) {
-        // Try to fit 2 items side by side if both have ≤2 images
         let secA = itemSections[i];
         let secB = (i+1 < itemSections.length) ? itemSections[i+1] : null;
         let imagesA = secA.querySelector('input[type="file"]').files || [];
         let imagesB = secB ? secB.querySelector('input[type="file"]').files || [] : [];
+        let descA = secA.querySelector('textarea').value;
+        let descB = secB ? secB.querySelector('textarea').value : "";
         let canFitTwo = secB && imagesA.length <= 2 && imagesB.length <= 2;
-        // Estimate height
         let rowHeight = 0;
         if (canFitTwo) {
-          // Max of two items, each ≤2 images (110px), plus text (~65px), plus gap
           rowHeight = 140 + (Math.max(imagesA.length, imagesB.length) > 0 ? 130 : 70);
         } else {
           rowHeight = 140 + (imagesA.length > 0 ? 130 : 70);
@@ -406,13 +466,12 @@
             const lng = sec.querySelector('[id^="lng"]').value;
             if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+idx+1});
             pdf.setFontSize(13);
-            pdf.text(`Item #${i+idx+1}:`, itemX[idx], baseY);
+            pdf.text(`Item #${i+idx+1}: ${desc}`, itemX[idx], baseY);
             pdf.setFontSize(12);
-            pdf.text(`Description: ${desc}`, itemX[idx], baseY+18);
-            pdf.text(`Location: ${coord}`, itemX[idx], baseY+36);
+            pdf.text(`Location: ${coord}`, itemX[idx], baseY+18);
             // Images
             if (images.length) {
-              let imgY = baseY+48, imgX = itemX[idx];
+              let imgY = baseY+32, imgX = itemX[idx];
               for (let j = 0; j < images.length; j++) {
                 const dataUrl = await fileToDataURL(images[j]);
                 pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
@@ -423,7 +482,6 @@
           y += rowHeight;
           i += 2;
         } else {
-          // Single item
           const baseY = y + 15;
           const desc = secA.querySelector('textarea').value;
           const coord = secA.querySelector('[id^="coord"]').textContent;
@@ -433,13 +491,11 @@
           const lng = secA.querySelector('[id^="lng"]').value;
           if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
           pdf.setFontSize(13);
-          pdf.text(`Item #${i+1}:`, leftMargin, baseY);
+          pdf.text(`Item #${i+1}: ${desc}`, leftMargin, baseY);
           pdf.setFontSize(12);
-          pdf.text(`Description: ${desc}`, leftMargin, baseY+18);
-          pdf.text(`Location: ${coord}`, leftMargin, baseY+36);
-          // Images
+          pdf.text(`Location: ${coord}`, leftMargin, baseY+18);
           if (images.length) {
-            let imgY = baseY+48, imgX = leftMargin;
+            let imgY = baseY+32, imgX = leftMargin;
             for (let j = 0; j < images.length && j < 2; j++) {
               const dataUrl = await fileToDataURL(images[j]);
               pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
@@ -460,7 +516,6 @@
           i += 1;
         }
       }
-      // All-items map at the end
       if (locations.length > 0) {
         await generateAllItemsMapPDF(locations, pdf);
       }
