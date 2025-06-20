@@ -487,14 +487,16 @@
       }
     }
 
-    // Overview map logic (for user to pan/zoom and see all item locations)
+    // Overview map logic with default center/zoom on item 1
     let overviewMap, overviewMapMarkers = [];
+    let overviewMapInitialized = false;
     function initOverviewMap() {
       if (overviewMap) { overviewMap.remove(); overviewMap = null; }
       overviewMap = L.map('overviewMap', { center: [37,-96], zoom: 4, zoomControl: true });
       L.tileLayer('https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza', {
         attribution: '', tileSize: 256, minZoom: 1, maxZoom: 20
       }).addTo(overviewMap);
+      overviewMapInitialized = false;
       updateOverviewMap();
     }
     function updateOverviewMap() {
@@ -503,13 +505,16 @@
       overviewMapMarkers = [];
       const itemSections = document.querySelectorAll('.item-section');
       let bounds = [];
+      let firstLatLng = null;
       for (let i=0; i<itemSections.length; i++) {
         const sec = itemSections[i];
         const lat = sec.querySelector('[id^="lat"]').value;
         const lng = sec.querySelector('[id^="lng"]').value;
         if (lat && lng) {
-          bounds.push([parseFloat(lat), parseFloat(lng)]);
-          let marker = L.marker([parseFloat(lat),parseFloat(lng)]);
+          const latNum = parseFloat(lat), lngNum = parseFloat(lng);
+          if (!firstLatLng) firstLatLng = [latNum, lngNum];
+          bounds.push([latNum, lngNum]);
+          let marker = L.marker([latNum, lngNum]);
           const numberIcon = L.divIcon({
             html: `<div style="background:#213559;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff;box-shadow:0 2px 7px #223e5b21;">${i+1}</div>`,
             className: '', iconSize: [18,18], iconAnchor: [9,9]
@@ -519,15 +524,12 @@
           overviewMapMarkers.push(marker);
         }
       }
-      // Auto-zoom if possible
-      if (bounds.length === 1) {
-        overviewMap.setView(bounds[0], 18);
-      } else if (bounds.length > 1) {
-        overviewMap.fitBounds(bounds, {padding:[22,22]});
+      // Only auto-center on the first item if the user hasn't interacted yet
+      if (!overviewMapInitialized && firstLatLng) {
+        overviewMap.setView(firstLatLng, 18);
+        overviewMapInitialized = true;
       }
     }
-    // When user adds/removes item, update map markers
-    // Already called from updateSummary, addItem, removeItem
 
     // PDF GENERATION uses the *current state of the overview map* for the report!
     document.getElementById('generatePDF').onclick = async function() {
