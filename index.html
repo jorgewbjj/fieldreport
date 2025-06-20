@@ -10,81 +10,104 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
+    :root {
+      --main: #377dff;
+      --main-dark: #225ec9;
+      --bg: #f7f9fb;
+      --card: #fff;
+      --subtle: #f3f7fa;
+      --radius: 18px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
     body {
       font-family: 'Inter', Arial, sans-serif;
-      background: #f7f9fb;
+      background: var(--bg);
       margin: 0;
       padding: 0;
     }
     .container {
-      max-width: 800px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 28px 20px;
-      border-radius: 20px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      max-width: 580px;
+      margin: 28px auto;
+      background: var(--card);
+      padding: 18px 6vw 20px 6vw;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
     h2 {
-      margin-top: 0;
-      font-size: 1.6rem;
+      margin: 0 0 18px 0;
+      font-size: 1.45rem;
       font-weight: 700;
       color: #20243a;
+      letter-spacing: -.5px;
     }
     .field-row {
       display: flex;
-      gap: 18px;
-      margin-bottom: 18px;
       flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .field-col {
+      flex: 1 1 140px;
+      min-width: 120px;
     }
     label {
-      font-size: 1rem;
+      font-size: .98rem;
       font-weight: 500;
       margin-bottom: 4px;
       display: block;
+      color: #374151;
     }
-    input, select, button, textarea {
-      padding: 10px;
+    input, select, textarea {
+      padding: 10px 12px;
       border: 1px solid #dde3ed;
       border-radius: 8px;
       font-size: 1rem;
       width: 100%;
       margin-top: 2px;
+      background: #fcfdfe;
+      transition: border .2s;
     }
-    input[type="date"] { max-width: 170px;}
-    select { max-width: 200px; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--main);
+      background: #f6f8ff;
+    }
+    input[type="date"] { max-width: 100%; }
+    select { max-width: 100%; }
     button, .add-btn, .remove-btn {
       cursor: pointer;
       border: none;
       color: #fff;
-      background: #377dff;
-      padding: 8px 16px;
+      background: var(--main);
+      padding: 10px 18px;
       border-radius: 8px;
       font-weight: 600;
+      font-size: 1rem;
+      margin-top: 10px;
       transition: background .2s;
     }
-    button:hover, .add-btn:hover, .remove-btn:hover { background: #225ec9; }
+    button:hover, .add-btn:hover, .remove-btn:hover { background: var(--main-dark); }
     .add-btn, .remove-btn {
-      background: #31b86a;
-      margin-top: 8px;
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-      padding: 5px 12px;
+      background: #2fc069;
+      margin-top: 10px;
+      padding: 8px 13px;
+      font-size: .95rem;
     }
-    .remove-btn { background: #e44; margin-left: 14px; }
+    .remove-btn { background: #e44; margin-left: 10px; }
     .item-section {
-      background: #f3f7fa;
-      border-radius: 14px;
-      padding: 18px;
-      margin-bottom: 22px;
+      background: var(--subtle);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 16px;
       position: relative;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     }
-    .item-section h4 { margin-top: 0; margin-bottom: 10px; }
+    .item-section h4 { margin:0 0 7px 0; font-size:1.02rem;}
     .pictures-preview {
       display: flex;
-      gap: 10px;
+      gap: 9px;
       flex-wrap: wrap;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .pictures-preview img {
       max-width: 120px;
@@ -95,16 +118,18 @@
     }
     .map-container {
       width: 100%;
-      height: 220px;
+      height: 160px;
       margin-top: 7px;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 5px rgba(0,0,0,0.03);
     }
     #generatePDF {
       background: #2b9cf6;
-      margin-top: 22px;
+      margin-top: 18px;
       width: 100%;
+      padding: 12px;
+      font-size: 1rem;
     }
     #addTechPrompt {
       display: none;
@@ -113,20 +138,26 @@
     }
     #addTechPrompt input { width: auto; flex: 2 1 80px;}
     #allItemsMapForPDF {
-      width: 620px;
-      height: 300px;
+      width: 540px;
+      height: 260px;
       position: absolute;
       top: -10000px;
       left: -10000px;
       z-index: -1;
-      border-radius: 14px;
+      border-radius: 13px;
       overflow: hidden;
       background: #e9e9e9;
       border: 3px solid #eee;
     }
-    @media (max-width: 700px) {
-      .container { max-width: 98vw; padding: 8vw 2vw; }
-      .map-container { height: 160px; }
+    @media (max-width:600px) {
+      .container { padding: 8vw 2vw; box-shadow: 0 2px 12px rgba(0,0,0,0.09);}
+      .item-section {padding:10px;}
+      .pictures-preview img {max-width:90px;max-height:68px;}
+      #allItemsMapForPDF {width:96vw;height:33vw;}
+    }
+    @media (max-width:400px) {
+      .field-row, .field-col {flex-direction:column;min-width:0;}
+      input, select, textarea {font-size: .98rem;}
     }
   </style>
 </head>
@@ -135,17 +166,17 @@
     <h2>Field Report</h2>
     <form id="reportForm" autocomplete="off">
       <div class="field-row">
-        <div style="flex:1 1 200px">
+        <div class="field-col">
           <label for="address">Address</label>
           <input type="text" id="address" name="address" required placeholder="Enter address" />
         </div>
-        <div style="flex:1 1 150px">
+        <div class="field-col">
           <label for="date">Date</label>
           <input type="date" id="date" name="date" required />
         </div>
       </div>
       <div class="field-row">
-        <div style="flex:1 1 180px">
+        <div class="field-col">
           <label for="technician">Technician</label>
           <select id="technician" name="technician" required>
             <option value="">Select...</option>
@@ -161,20 +192,20 @@
             <button type="button" id="cancelTechBtn" style="background:#aaa; padding: 7px 12px; width:auto;">Cancel</button>
           </div>
         </div>
-        <div style="flex:1 1 180px">
+        <div class="field-col">
           <label for="store">Store</label>
           <input type="text" id="store" name="store" required />
         </div>
-        <div style="flex:1 1 140px">
+        <div class="field-col">
           <label for="storeNum">Store Number</label>
           <input type="text" id="storeNum" name="storeNum" required />
         </div>
       </div>
-      <hr style="margin:30px 0 20px 0; border:none; border-top:1.5px solid #e5e8ef;" />
-      <h3 style="margin-bottom:0;">Items</h3>
+      <hr style="margin:25px 0 13px 0; border:none; border-top:1.5px solid #e5e8ef;" />
+      <h3 style="margin-bottom:0;font-size:1.10rem;">Items</h3>
       <div id="itemsContainer"></div>
       <button type="button" class="add-btn" onclick="addItem()">+ Add Item</button>
-      <div style="margin-top:30px;">
+      <div style="margin-top:24px;">
         <button type="submit">Submit Report</button>
         <button type="button" id="generatePDF">Generate PDF</button>
       </div>
@@ -230,11 +261,11 @@
           <button type="button" class="remove-btn" onclick="removeItem('${div.id}')">Remove</button>
         </div>
         <div class="field-row">
-          <div style="flex:2 1 240px">
+          <div style="flex:2 1 200px">
             <label>Description</label>
             <textarea name="itemDesc${itemIdx}" placeholder="Describe the item..." rows="2" required></textarea>
           </div>
-          <div style="flex:1 1 160px">
+          <div style="flex:1 1 100px">
             <label>Pictures</label>
             <input type="file" name="itemPics${itemIdx}" accept="image/*" multiple onchange="previewPics(this, '${div.id}')"/>
             <div class="pictures-preview" id="picPreview${itemIdx}"></div>
@@ -318,7 +349,7 @@
         showMap(-22.9068, -43.1729);
       }
     }
-    // PDF generation with all-item map at the end
+    // PDF generation with all-item map at the end (items: 2 per row if both have ≤2 images)
     document.getElementById('generatePDF').onclick = async function() {
       const jsPDF = window.jspdf.jsPDF;
       const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
@@ -343,71 +374,98 @@
       y += 10;
       const itemSections = document.querySelectorAll('.item-section');
       const locations = [];
-      for (let i = 0; i < itemSections.length; i++) {
-        // Estimate space needed for this item
-        let estHeight = 24 + 16 + 16 + 10 + 120 + 10; // text and images
-        const sec = itemSections[i];
-        const desc = sec.querySelector('textarea').value;
-        const coord = sec.querySelector('[id^="coord"]').textContent;
-        const imgInput = sec.querySelector('input[type="file"]');
-        const images = imgInput ? imgInput.files : [];
-        const lat = sec.querySelector('[id^="lat"]').value;
-        const lng = sec.querySelector('[id^="lng"]').value;
-        if(lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
-        // Estimate for images
-        const nImgs = images.length;
-        if (nImgs > 0) {
-          estHeight += (Math.ceil(nImgs / 2)) * 120;
+      let i = 0;
+      while (i < itemSections.length) {
+        // Try to fit 2 items side by side if both have ≤2 images
+        let secA = itemSections[i];
+        let secB = (i+1 < itemSections.length) ? itemSections[i+1] : null;
+        let imagesA = secA.querySelector('input[type="file"]').files || [];
+        let imagesB = secB ? secB.querySelector('input[type="file"]').files || [] : [];
+        let canFitTwo = secB && imagesA.length <= 2 && imagesB.length <= 2;
+        // Estimate height
+        let rowHeight = 0;
+        if (canFitTwo) {
+          // Max of two items, each ≤2 images (110px), plus text (~65px), plus gap
+          rowHeight = 140 + (Math.max(imagesA.length, imagesB.length) > 0 ? 130 : 70);
+        } else {
+          rowHeight = 140 + (imagesA.length > 0 ? 130 : 70);
         }
-        // If not enough space, add a new page
-        if (y + estHeight > pageHeight - 50) {
+        if (y + rowHeight > pageHeight - 60) {
           pdf.addPage();
           y = 30;
         }
-        y += 24;
-        pdf.setFontSize(13);
-        pdf.text(`Item #${i+1}:`, leftMargin, y);
-        y += 16;
-        pdf.setFontSize(12);
-        pdf.text(`Description: ${desc}`, leftMargin+10, y);
-        y += 16;
-        pdf.text(`Location: ${coord}`, leftMargin+10, y);
-        // Pictures (larger, 2 per row, wrap as needed)
-        if (images.length) {
-          y += 10;
-          let ximg = leftMargin+10, imgInRow = 0;
-          for (let j = 0; j < images.length; j++) {
-            const imgFile = images[j];
-            if (imgFile && imgFile.type.startsWith('image/')) {
-              try {
-                const dataUrl = await fileToDataURL(imgFile);
-                pdf.addImage(dataUrl, 'JPEG', ximg, y, 145, 110);
-                ximg += 155;
-                imgInRow++;
-                if (imgInRow === 2) {
-                  ximg = leftMargin+10;
-                  y += 120;
-                  imgInRow = 0;
-                  // If not enough space for another row, break page
-                  if (y + 120 > pageHeight - 50 && j < images.length - 1) {
-                    pdf.addPage();
-                    y = 30;
-                  }
-                }
-              } catch (e) {}
+        if (canFitTwo) {
+          let itemX = [leftMargin, leftMargin+245];
+          [secA, secB].forEach(async (sec, idx) => {
+            const baseY = y + 15;
+            const desc = sec.querySelector('textarea').value;
+            const coord = sec.querySelector('[id^="coord"]').textContent;
+            const imgInput = sec.querySelector('input[type="file"]');
+            const images = imgInput ? imgInput.files : [];
+            const lat = sec.querySelector('[id^="lat"]').value;
+            const lng = sec.querySelector('[id^="lng"]').value;
+            if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+idx+1});
+            pdf.setFontSize(13);
+            pdf.text(`Item #${i+idx+1}:`, itemX[idx], baseY);
+            pdf.setFontSize(12);
+            pdf.text(`Description: ${desc}`, itemX[idx], baseY+18);
+            pdf.text(`Location: ${coord}`, itemX[idx], baseY+36);
+            // Images
+            if (images.length) {
+              let imgY = baseY+48, imgX = itemX[idx];
+              for (let j = 0; j < images.length; j++) {
+                const dataUrl = await fileToDataURL(images[j]);
+                pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
+                imgY += 120;
+              }
+            }
+          });
+          y += rowHeight;
+          i += 2;
+        } else {
+          // Single item
+          const baseY = y + 15;
+          const desc = secA.querySelector('textarea').value;
+          const coord = secA.querySelector('[id^="coord"]').textContent;
+          const imgInput = secA.querySelector('input[type="file"]');
+          const images = imgInput ? imgInput.files : [];
+          const lat = secA.querySelector('[id^="lat"]').value;
+          const lng = secA.querySelector('[id^="lng"]').value;
+          if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
+          pdf.setFontSize(13);
+          pdf.text(`Item #${i+1}:`, leftMargin, baseY);
+          pdf.setFontSize(12);
+          pdf.text(`Description: ${desc}`, leftMargin, baseY+18);
+          pdf.text(`Location: ${coord}`, leftMargin, baseY+36);
+          // Images
+          if (images.length) {
+            let imgY = baseY+48, imgX = leftMargin;
+            for (let j = 0; j < images.length && j < 2; j++) {
+              const dataUrl = await fileToDataURL(images[j]);
+              pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
+              imgX += 155;
+            }
+            imgY += 120;
+            if (images.length > 2) {
+              imgX = leftMargin;
+              for (let j = 2; j < images.length; j++) {
+                const dataUrl = await fileToDataURL(images[j]);
+                pdf.addImage(dataUrl, 'JPEG', imgX, imgY, 145, 110);
+                imgX += 155;
+              }
+              imgY += 120;
             }
           }
-          if (imgInRow > 0) y += 120;
+          y += rowHeight;
+          i += 1;
         }
-        y += 10;
       }
-      // All-items map at the end (landscape, centered, smaller, with borders)
+      // All-items map at the end
       if (locations.length > 0) {
         await generateAllItemsMapPDF(locations, pdf);
       }
       pdf.save(`field-report-${date}.pdf`);
     };
-    // File to DataURL
     function fileToDataURL(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -416,7 +474,6 @@
         reader.readAsDataURL(file);
       });
     }
-    // Generate all-items map and add to PDF
     async function generateAllItemsMapPDF(locations, pdf) {
       return new Promise((resolve) => {
         const mapDiv = document.getElementById('allItemsMapForPDF');
@@ -427,7 +484,6 @@
         locations.forEach(l => { avgLat += l.lat; avgLng += l.lng; });
         avgLat /= locations.length;
         avgLng /= locations.length;
-        // Map: smaller size, higher zoom, landscape
         const map = L.map('allItemsMapForPDF', {
           center: [avgLat, avgLng],
           zoom: 17,
@@ -463,18 +519,16 @@
             const pageWidth = pdf.internal.pageSize.getWidth();
             pdf.setFontSize(18);
             pdf.text('All Item Locations', pageWidth/2, 40, {align:'center'});
-            // Center image (600x300 px in a4 landscape)
-            const imgWidth = 600, imgHeight = 300;
+            const imgWidth = 540, imgHeight = 260;
             const imgX = (pageWidth-imgWidth)/2;
             pdf.setDrawColor(200);
-            pdf.rect(imgX-10, 54, imgWidth+20, imgHeight+20); // Border around image
+            pdf.rect(imgX-10, 54, imgWidth+20, imgHeight+20);
             pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), 'JPEG', imgX, 64, imgWidth, imgHeight);
             resolve();
           });
         }, 1200);
       });
     }
-    // Dummy submit
     document.getElementById('reportForm').onsubmit = function(e) {
       e.preventDefault();
       alert("Report submitted! (Handle save/export logic here)");
