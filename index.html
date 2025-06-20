@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Field Report - Satellite, Robust Image Editing, PDF</title>
+  <title>Field Report - Robust Images & Map Fix</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <!-- Cropper.js CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"/>
   <style>
     body { margin:0; padding:0; font-family:'Segoe UI',Arial,sans-serif; background:#f6f8fa; color:#232323;}
@@ -39,7 +37,7 @@
       background:#fff; padding:18px; border-radius:12px; max-width:90vw; max-height:90vh; display:flex; flex-direction:column; align-items:center;
     }
     .modal-images-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px;}
-    .modal-controls { display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;}
+    .modal-controls { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;}
     .crop-img-preview { max-width:340px; max-height:60vh;}
     .modal-thumb { width:64px; height:64px; object-fit:cover; border-radius:8px; border:2px solid #2b7cff; cursor:pointer;}
     .modal-thumb.selected { border:3px solid #fc0;}
@@ -75,20 +73,15 @@
     <button class="pdf-btn" id="generatePDF">Generate PDF Report</button>
   </div>
 
-  <!-- Modals for image crop and order -->
   <div id="modal-root" style="display:none"></div>
 
-  <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- Cropper.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-  <!-- jsPDF & html2canvas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    // ==== MAPTILER API KEY USED HERE ====
+    // MAPTILER API KEY
     const MAPTILER_KEY = 'D07LNHRpX8QqmkT39Nza';
-    // ====================================
 
     const satelliteLayerURL = `https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`;
     const satelliteLayerAttrib = '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a>';
@@ -98,20 +91,20 @@
     let map = null, addMarker = null, satelliteLayer = null;
     function initMainMap() {
       if (map) { map.remove(); }
-      map = L.map('map', { zoomControl:true, maxZoom:22, minZoom:1 });
-      satelliteLayer = L.tileLayer(satelliteLayerURL, { attribution: satelliteLayerAttrib, maxZoom:22 });
+      map = L.map('map', { zoomControl:true, maxZoom:20, minZoom:1 });
+      satelliteLayer = L.tileLayer(satelliteLayerURL, { attribution: satelliteLayerAttrib, maxZoom:20 });
       satelliteLayer.addTo(map);
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(pos) {
           const { latitude, longitude } = pos.coords;
-          map.setView([latitude, longitude], 22);
+          map.setView([latitude, longitude], 20);
           setMarker(latitude, longitude);
         }, function() {
-          map.setView([37.7749, -122.4194], 22);
+          map.setView([37.7749, -122.4194], 20);
         });
       } else {
-        map.setView([37.7749, -122.4194], 22);
+        map.setView([37.7749, -122.4194], 20);
       }
       map.on('click', function(e) { setMarker(e.latlng.lat, e.latlng.lng); });
     }
@@ -129,8 +122,9 @@
       if (!this.files.length) return;
       let imgFiles = Array.from(this.files).map(f => ({ file: f, url: URL.createObjectURL(f) }));
       let croppedImages = await openImageCropModal(imgFiles);
-      this.value = ''; // Reset input
-      this.croppedImages = croppedImages; // Attach to input for submit
+      // Only set croppedImages if at least one image is present (fixes "not added" bug)
+      this.value = '';
+      this.croppedImages = Array.isArray(croppedImages) && croppedImages.length ? croppedImages : undefined;
     });
 
     function openImageCropModal(imgFiles) {
@@ -154,8 +148,7 @@
           </div>
         `;
         let index = 0, cropper = null, rotations = new Array(imgFiles.length).fill(0);
-
-        let imgDataArr = [...imgFiles];
+        let imgDataArr = [...imgFiles], croppedArr = new Array(imgFiles.length).fill(null);
         const updateThumbs = () => {
           const thumbs = imgDataArr.map((img, i) =>
             `<img src="${img.url}" class="modal-thumb${i === index ? " selected" : ""}" data-idx="${i}" />`
@@ -182,6 +175,7 @@
           if (imgDataArr.length === 1) return;
           imgDataArr.splice(index,1);
           rotations.splice(index,1);
+          croppedArr.splice(index,1);
           if (index >= imgDataArr.length) index = imgDataArr.length-1;
           showImage();
         };
@@ -192,16 +186,17 @@
           if (cropper) { cropper.rotate(90); rotations[index]=(rotations[index]+1)%4; }
         };
         document.getElementById('btn-finish').onclick = async () => {
-          const croppedArr = [];
+          // Always crop on finish for each image to avoid "no image" issue
           for (let i=0; i<imgDataArr.length; i++) {
             index = i; showImage();
-            await new Promise(res => setTimeout(res, 100));
+            await new Promise(res => setTimeout(res, 120));
             if (cropper) {
-              croppedArr.push(cropper.getCroppedCanvas({ width:600, height:600 }).toDataURL("image/jpeg", 0.85));
+              croppedArr[i] = cropper.getCroppedCanvas({ width:600, height:600 }).toDataURL("image/jpeg", 0.85);
             }
           }
+          // Filter out any failed crops (shouldn't happen)
           modalRoot.style.display = 'none';
-          resolve(croppedArr);
+          resolve(croppedArr.filter(Boolean));
         };
         showImage();
       });
@@ -284,8 +279,8 @@
             keyboard: false,
             tap: false,
             preferCanvas: true
-          }).setView([item.lat, item.lng], 22);
-          L.tileLayer(satelliteLayerURL, { attribution: '', maxZoom:22 }).addTo(miniMap);
+          }).setView([item.lat, item.lng], 20); // Not too zoomed!
+          L.tileLayer(satelliteLayerURL, { attribution: '', maxZoom:20 }).addTo(miniMap);
           L.marker([item.lat, item.lng]).addTo(miniMap);
         }, 100);
       });
