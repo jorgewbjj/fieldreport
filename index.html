@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Field Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Leaflet & Cropper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -27,7 +26,7 @@
       margin: 0; padding: 0;
     }
     .container {
-      max-width: 680px;
+      max-width: 700px;
       margin: 32px auto;
       background: var(--card);
       padding: 2.2rem 7vw 2.2rem 7vw;
@@ -37,7 +36,7 @@
       transition: box-shadow .2s;
     }
     h2 {
-      margin: 0 0 18px 0;
+      margin: 0 0 10px 0;
       font-size: 2rem;
       font-weight: 800;
       color: var(--main);
@@ -45,8 +44,21 @@
       text-align: center;
       text-shadow: 0 2px 8px #e2e6ee99;
     }
+    /* Big selected logo above form */
+    #bigLogoWrap {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    #bigLogo {
+      max-width: 240px;
+      width: 98%;
+      margin: 0 auto 12px auto;
+      display: block;
+      filter: drop-shadow(0 2px 8px #22395e22);
+    }
     .logo-row {
-      display: flex; align-items: center; gap: 20px; margin-top: 5px; justify-content: center; margin-bottom: 7px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 18px; margin-top: 0px; margin-bottom: 16px; flex-wrap: wrap;
     }
     .logo-choice {
       background: #fff;
@@ -69,36 +81,41 @@
       background: #eaf1fd;
     }
     .logo-choice img {
-      height: 27px; width: auto; vertical-align: middle;
+      height: 48px;
+      width: auto;
+      vertical-align: middle;
       filter: drop-shadow(0 1px 5px #22395e21);
       border-radius: 3px;
     }
-    .tight-header-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-end;
-      gap: 0 30px;
+    .info-header-block {
       background: #eaf0fb;
-      border-radius: 12px;
-      padding: 13px 16px 6px 18px;
+      border-radius: 13px;
       border-left: 7px solid var(--main);
       border-top: 1px solid #d7dbed;
-      margin-bottom: 13px;
+      margin-bottom: 18px;
+      padding: 18px 22px 10px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
     }
-    .tight-header-group {
-      display: flex; flex-direction: row; gap: 23px; flex-wrap: wrap; font-size: 1.03rem;
+    .info-header-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      font-size: 1.08rem;
+      color: #22395e;
     }
-    .tight-header-label {
-      color: #244; font-weight: 600; margin-right: 4px;
+    .info-header-label {
+      font-weight: 700;
+      margin-right: 4px;
+      color: #132040;
     }
-    .tight-header-value {
-      color: #11203c; font-weight: 500;
-      background: #fff;
-      padding: 3px 10px;
-      border-radius: 7px;
-      border: 1px solid #dae1f4;
-      font-size: .99em;
-      min-width: 70px;
+    .info-header-value {
+      font-weight: 500;
+      color: #283659;
       margin-right: 14px;
       display: inline-block;
     }
@@ -163,7 +180,6 @@
       .pictures-preview img {max-width:97px;max-height:72px;}
       #allItemsMapForPDF {width:96vw;height:33vw;}
       .logo-row {gap:10px;}
-      .tight-header-row {flex-direction:column;gap:3px;}
     }
     @media (max-width:400px) {
       .field-row, .field-col, .roof-row, .roof-col, .addr-row, .addr-col {flex-direction:column;min-width:0;}
@@ -174,63 +190,94 @@
 <body>
   <div class="container" id="reportMain">
     <h2>Field Report</h2>
+    <div id="bigLogoWrap">
+      <img id="bigLogo" src="seal.png" alt="Logo" />
+    </div>
     <div class="logo-row" id="logoRow">
       <div class="logo-choice selected" onclick="selectLogo(this, 'seal')">
-    <img src="seal.png" alt="Seal Top" /> Seal Top
-  </div>
-  <div class="logo-choice" onclick="selectLogo(this, 'ibs')">
-    <img src="ibs.png" alt="IBS Roofing" /> IBS Roofing
-  </div>
-  <div class="logo-choice" onclick="selectLogo(this, 'zurix')">
-    <img src="zurix.png" alt="Zurix" /> Zurix
-  </div>
-</div>
-    <!-- ROOF INFO & FORM -->
-    <div class="roof-row" style="margin-bottom:10px;">
-      <div class="roof-col">
-        <label for="roofCondition">Roof Condition</label>
-        <select id="roofCondition" required>
-          <option value="">Select...</option>
-          <option value="Good">Good</option>
-          <option value="Fair">Fair</option>
-          <option value="Poor">Poor</option>
-        </select>
+        <img src="seal.png" alt="Seal Top" /> Seal Top
       </div>
-      <div class="roof-col">
-        <label for="roofType">Type of Roof</label>
-        <select id="roofType" onchange="showOtherRoofType()" required>
-          <option value="">Select...</option>
-          <option value="PVC">PVC</option>
-          <option value="TPO">TPO</option>
-          <option value="Modified">Modified</option>
-          <option value="Metal">Metal</option>
-          <option value="Other">Other</option>
-        </select>
-        <input type="text" id="roofTypeOther" style="display:none;margin-top:5px;" placeholder="Enter type..." />
+      <div class="logo-choice" onclick="selectLogo(this, 'ibs')">
+        <img src="ibs.png" alt="IBS Roofing" /> IBS Roofing
       </div>
-      <div class="roof-col">
-        <label for="roofAccess">Roof Access</label>
-        <select id="roofAccess" required>
-          <option value="">Select...</option>
-          <option value="External ladder">External ladder</option>
-          <option value="Roof hatch">Roof hatch</option>
-        </select>
+      <div class="logo-choice" onclick="selectLogo(this, 'zurix')">
+        <img src="zurix.png" alt="Zurix" /> Zurix
+      </div>
+      <div class="logo-choice" onclick="selectLogo(this, 'jube')">
+        <img src="jube.png" alt="Jube Management" /> Jube Management
       </div>
     </div>
     <form id="reportForm" autocomplete="off">
+      <!-- Info summary block -->
+      <div class="info-header-block" id="infoHeaderBlock">
+        <div class="info-header-line">
+          <span class="info-header-label">Store:</span><span class="info-header-value" id="sumStore"></span>
+          <span class="info-header-label">Store #:</span><span class="info-header-value" id="sumStoreNum"></span>
+          <span class="info-header-label">Technician:</span><span class="info-header-value" id="sumTech"></span>
+        </div>
+        <div class="info-header-line">
+          <span class="info-header-label">Roof:</span><span class="info-header-value" id="sumRoofType"></span>
+          <span class="info-header-label">Condition:</span><span class="info-header-value" id="sumRoofCond"></span>
+          <span class="info-header-label">Access:</span><span class="info-header-value" id="sumRoofAccess"></span>
+        </div>
+        <div class="info-header-line">
+          <span class="info-header-label">Date:</span><span class="info-header-value" id="sumDate"></span>
+        </div>
+        <div class="info-header-line">
+          <span class="info-header-label">Address:</span>
+          <span class="info-header-value" id="sumStreet"></span>
+          <span class="info-header-value" id="sumNumber"></span>
+          <span class="info-header-value" id="sumCity"></span>
+          <span class="info-header-value" id="sumState"></span>
+          <span class="info-header-value" id="sumZip"></span>
+          <span class="info-header-value" id="sumCountry"></span>
+        </div>
+      </div>
+      <!-- --- FORM FIELDS BELOW --- -->
+      <div class="roof-row" style="margin-bottom:10px;">
+        <div class="roof-col">
+          <label for="roofCondition">Roof Condition</label>
+          <select id="roofCondition" required onchange="updateSummary()">
+            <option value="">Select...</option>
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Poor">Poor</option>
+          </select>
+        </div>
+        <div class="roof-col">
+          <label for="roofType">Type of Roof</label>
+          <select id="roofType" onchange="showOtherRoofType();updateSummary()" required>
+            <option value="">Select...</option>
+            <option value="PVC">PVC</option>
+            <option value="TPO">TPO</option>
+            <option value="Modified">Modified</option>
+            <option value="Metal">Metal</option>
+            <option value="Other">Other</option>
+          </select>
+          <input type="text" id="roofTypeOther" style="display:none;margin-top:5px;" placeholder="Enter type..." oninput="updateSummary()" />
+        </div>
+        <div class="roof-col">
+          <label for="roofAccess">Roof Access</label>
+          <select id="roofAccess" required onchange="updateSummary()">
+            <option value="">Select...</option>
+            <option value="External ladder">External ladder</option>
+            <option value="Roof hatch">Roof hatch</option>
+          </select>
+        </div>
+      </div>
       <div class="addr-row">
-        <div class="addr-col"><label for="street">Street</label><input type="text" id="street" required /></div>
-        <div class="addr-col"><label for="number">Number</label><input type="text" id="number" required /></div>
-        <div class="addr-col"><label for="city">City</label><input type="text" id="city" required /></div>
-        <div class="addr-col"><label for="state">State</label><input type="text" id="state" required /></div>
-        <div class="addr-col"><label for="zip">Zip</label><input type="text" id="zip" required /></div>
-        <div class="addr-col"><label for="country">Country</label><input type="text" id="country" required /></div>
-        <div class="addr-col"><label for="date">Date</label><input type="date" id="date" required /></div>
+        <div class="addr-col"><label for="street">Street</label><input type="text" id="street" required oninput="updateSummary()"/></div>
+        <div class="addr-col"><label for="number">Number</label><input type="text" id="number" required oninput="updateSummary()"/></div>
+        <div class="addr-col"><label for="city">City</label><input type="text" id="city" required oninput="updateSummary()"/></div>
+        <div class="addr-col"><label for="state">State</label><input type="text" id="state" required oninput="updateSummary()"/></div>
+        <div class="addr-col"><label for="zip">Zip</label><input type="text" id="zip" required oninput="updateSummary()"/></div>
+        <div class="addr-col"><label for="country">Country</label><input type="text" id="country" required oninput="updateSummary()"/></div>
+        <div class="addr-col"><label for="date">Date</label><input type="date" id="date" required onchange="updateSummary()"/></div>
       </div>
       <div class="field-row">
         <div class="field-col">
           <label for="technician">Technician</label>
-          <select id="technician" name="technician" required>
+          <select id="technician" name="technician" required onchange="updateSummary()">
             <option value="">Select...</option>
             <option value="Arister">Arister</option>
             <option value="David">David</option>
@@ -246,11 +293,11 @@
         </div>
         <div class="field-col">
           <label for="store">Store</label>
-          <input type="text" id="store" name="store" required />
+          <input type="text" id="store" name="store" required oninput="updateSummary()"/>
         </div>
         <div class="field-col">
           <label for="storeNum">Store Number</label>
-          <input type="text" id="storeNum" name="storeNum" required />
+          <input type="text" id="storeNum" name="storeNum" required oninput="updateSummary()"/>
         </div>
       </div>
       <hr style="margin:20px 0 13px 0; border:none; border-top:1.5px solid #e5e8ef;" />
@@ -264,7 +311,7 @@
     </form>
   </div>
   <div id="allItemsMapForPDF"></div>
-  <!-- Cropper Modal -->
+  <!-- Cropper Modal, scripts, etc. remain unchanged -->
   <div class="modal" id="cropperModal">
     <div class="modal-content">
       <div style="margin-bottom:8px;font-weight:600;">Crop & Rotate Image</div>
@@ -278,24 +325,26 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // Logo logic
+    // Logo options, with local image files
+    const logoOptions = {
+      seal:  {url: "seal.png",   w: 200, h: 65},
+      ibs:   {url: "ibs.png",    w: 200, h: 65},
+      zurix: {url: "zurix.png",  w: 200, h: 65},
+      jube:  {url: "jube.png",   w: 200, h: 65}
+    };
     let selectedLogo = 'seal';
- const logoOptions = {
-  seal:  {url: "seal.png",   w: 90, h: 34},
-  ibs:   {url: "ibs.png",    w: 87, h: 33},
-  zurix: {url: "zurix.png",  w: 92, h: 32}
-};
-
     function selectLogo(el, key) {
       selectedLogo = key;
       document.querySelectorAll('.logo-choice').forEach(e=>e.classList.remove('selected'));
       el.classList.add('selected');
+      document.getElementById('bigLogo').src = logoOptions[key].url;
     }
     // Show/hide custom roof type
     function showOtherRoofType() {
       var rt = document.getElementById('roofType');
       var rto = document.getElementById('roofTypeOther');
       rto.style.display = (rt.value === 'Other') ? '' : 'none';
+      updateSummary();
     }
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
     window.onload = function() {
@@ -315,11 +364,31 @@
               document.getElementById('state').value = a.state||'';
               document.getElementById('zip').value = a.postcode||'';
               document.getElementById('country').value = a.country||'';
+              updateSummary();
             }
           } catch (e) {}
         });
       }
+      updateSummary();
     };
+    // Update summary info block live
+    function updateSummary() {
+      document.getElementById('sumStore').textContent = document.getElementById('store').value || "";
+      document.getElementById('sumStoreNum').textContent = document.getElementById('storeNum').value || "";
+      document.getElementById('sumTech').textContent = document.getElementById('technician').value || "";
+      let roofType = document.getElementById('roofType').value;
+      if (roofType === "Other") roofType = document.getElementById('roofTypeOther').value;
+      document.getElementById('sumRoofType').textContent = roofType || "";
+      document.getElementById('sumRoofCond').textContent = document.getElementById('roofCondition').value || "";
+      document.getElementById('sumRoofAccess').textContent = document.getElementById('roofAccess').value || "";
+      document.getElementById('sumDate').textContent = document.getElementById('date').value || "";
+      document.getElementById('sumStreet').textContent = document.getElementById('street').value || "";
+      document.getElementById('sumNumber').textContent = document.getElementById('number').value || "";
+      document.getElementById('sumCity').textContent = document.getElementById('city').value || "";
+      document.getElementById('sumState').textContent = document.getElementById('state').value || "";
+      document.getElementById('sumZip').textContent = document.getElementById('zip').value || "";
+      document.getElementById('sumCountry').textContent = document.getElementById('country').value || "";
+    }
     // Technician Dropdown with Add Feature
     const technicianSelect = document.getElementById('technician');
     const addTechPrompt = document.getElementById('addTechPrompt');
@@ -327,6 +396,7 @@
     const addTechBtn = document.getElementById('addTechBtn');
     const cancelTechBtn = document.getElementById('cancelTechBtn');
     technicianSelect.onchange = function() {
+      updateSummary();
       if (technicianSelect.value === 'add-tech') {
         addTechPrompt.style.display = 'flex';
         addTechInput.focus();
@@ -344,11 +414,13 @@
         technicianSelect.value = name;
         addTechPrompt.style.display = 'none';
         addTechInput.value = '';
+        updateSummary();
       }
     };
     cancelTechBtn.onclick = function() {
       addTechPrompt.style.display = 'none';
       technicianSelect.value = '';
+      updateSummary();
     };
     // Item logic & cropper handling
     let itemIdx = 0;
@@ -412,7 +484,7 @@
         document.getElementById('cropperModal').style.display = 'flex';
         if (cropper) cropper.destroy();
         cropper = new Cropper(document.getElementById('cropperImage'), {
-          aspectRatio: 4 / 3, // fixed aspect for all images!
+          aspectRatio: 4 / 3,
           viewMode:1,
           autoCropArea:1
         });
@@ -464,8 +536,8 @@
         }).addTo(map);
         let marker = null;
         if (latInput.value && lngInput.value) {
-          marker = L.marker([parseFloat(latInput.value), parseFloat(latInput.value)]).addTo(map);
-          coordSpan.textContent = `${parseFloat(latInput.value).toFixed(6)}, ${parseFloat(latInput.value).toFixed(6)}`;
+          marker = L.marker([parseFloat(latInput.value), parseFloat(lngInput.value)]).addTo(map);
+          coordSpan.textContent = `${parseFloat(latInput.value).toFixed(6)}, ${parseFloat(lngInput.value).toFixed(6)}`;
         } else {
           marker = L.marker([lat, lng]).addTo(map);
           latInput.value = lat;
@@ -492,11 +564,11 @@
         showMap(-22.9068, -43.1729);
       }
     }
-    // PDF GENERATION
+    // PDF GENERATION (logo centered and bigger, info left-aligned)
     document.getElementById('generatePDF').onclick = async function() {
       const jsPDF = window.jspdf.jsPDF;
       const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
-      let y = 34, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 34;
+      let y = 34, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 42;
       // Get all fields
       const roofCondition = document.getElementById('roofCondition').value;
       let roofType = document.getElementById('roofType').value;
@@ -514,26 +586,30 @@
       const storeNum = document.getElementById('storeNum').value;
       const logoObj = logoOptions[selectedLogo];
       // --- PDF HEADER WITH LOGO ---
+      let logoImage = await getImageDataUrl(logoObj.url);
+      const logoDisplayWidth = 220;
+      const aspect = logoObj.h / logoObj.w;
+      const logoDisplayHeight = logoDisplayWidth * aspect;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const logoX = (pageWidth - logoDisplayWidth) / 2;
+      pdf.addImage(logoImage, 'PNG', logoX, y-10, logoDisplayWidth, logoDisplayHeight);
+      y += logoDisplayHeight + 16;
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(33, 53, 89);
-      pdf.setFontSize(23);
-      pdf.text('Field Report', leftMargin, y+8);
-      let logoImage = await getImageDataUrl(logoObj.url);
-      pdf.addImage(logoImage, 'PNG', pdf.internal.pageSize.getWidth()-logoObj.w-38, y-7, logoObj.w, logoObj.h);
-      y += 30;
+      pdf.setFontSize(20);
+      pdf.text('Field Report', leftMargin, y);
+      y += 10;
+      // Neatly left-align info
       pdf.setFontSize(12); pdf.setTextColor(30,30,45); pdf.setFont(undefined, "normal");
-      pdf.text(`Store: ${store}   #${storeNum}`, leftMargin, y);
-      pdf.text(`Technician: ${tech}`, leftMargin+170, y);
-      pdf.text(`Roof: ${roofType}`, leftMargin+320, y);
-      y += 17;
-      pdf.text(`Cond: ${roofCondition}`, leftMargin, y);
-      pdf.text(`Access: ${roofAccess}`, leftMargin+80, y);
-      pdf.text(`Date: ${date}`, leftMargin+180, y);
-      pdf.text(`Address: ${street} ${number}, ${city}, ${state} ${zip}, ${country}`, leftMargin+270, y);
-      y += 19;
+      pdf.text(`Store: ${store}  |  Store #: ${storeNum}`, leftMargin, y+=22);
+      pdf.text(`Technician: ${tech}`, leftMargin, y+=17);
+      pdf.text(`Roof: ${roofType}  |  Condition: ${roofCondition}  |  Access: ${roofAccess}`, leftMargin, y+=17);
+      pdf.text(`Date: ${date}`, leftMargin, y+=17);
+      pdf.text(`Address: ${street} ${number}, ${city}, ${state} ${zip}, ${country}`, leftMargin, y+=17);
+      y += 4;
       pdf.setFontSize(16);
       pdf.setTextColor(33, 53, 89);
-      pdf.text('Items', leftMargin, y+=12);
+      pdf.text('Items', leftMargin, y+=15);
       pdf.setTextColor(40,40,52);
       // --- ITEMS ---
       const itemSections = document.querySelectorAll('.item-section');
