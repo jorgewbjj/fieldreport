@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <title>Field Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-storage-compat.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -121,8 +125,12 @@
         <img src="jube.png" alt="Jube Management" /> Jube Management
       </div>
     </div>
+    <!-- PAST REPORTS LIST -->
+    <div id="pastReportsBlock" style="margin:18px 0 20px 0;">
+      <button onclick="listReports()" style="margin-bottom:8px;">Show Past Reports</button>
+      <ul id="reportList"></ul>
+    </div>
     <form id="reportForm" autocomplete="off">
-      <!-- Info summary block -->
       <div class="info-header-block" id="infoHeaderBlock">
         <div class="info-header-line">
           <span class="info-header-label">Store:</span><span class="info-header-value" id="sumStore"></span>
@@ -147,7 +155,6 @@
           <span class="info-header-value" id="sumCountry"></span>
         </div>
       </div>
-      <!-- --- FORM FIELDS BELOW --- -->
       <div class="roof-row" style="margin-bottom:10px;">
         <div class="roof-col">
           <label for="roofCondition">Roof Condition</label>
@@ -218,7 +225,6 @@
       <h3 style="margin-bottom:0;font-size:1.10rem;">Items</h3>
       <div id="itemsContainer"></div>
       <button type="button" class="add-btn" onclick="addItem()">+ Add Item</button>
-      <!-- OVERVIEW MAP LIVE! -->
       <div id="overviewMapWrap">
         <span id="overviewMapLabel">Overview Map – adjust as you want for the PDF:</span>
         <div id="overviewMap"></div>
@@ -226,6 +232,8 @@
       <div style="margin-top:18px;">
         <button type="submit">Submit Report</button>
         <button type="button" id="generatePDF">Generate PDF</button>
+        <button type="button" id="saveReportBtn">Save to Firebase</button>
+        <button type="button" id="newReportBtn" style="display:none;">New Report</button>
       </div>
     </form>
   </div>
@@ -245,7 +253,21 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // Logo options, with local image files
+    // ========== FIREBASE CONFIG ==========
+    // !!! Replace with your own project details !!!
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // --- Logo Options
     const logoOptions = {
       seal:  {url: "seal.png",   w: 200, h: 65},
       ibs:   {url: "ibs.png",    w: 200, h: 65},
@@ -259,13 +281,19 @@
       el.classList.add('selected');
       document.getElementById('bigLogo').src = logoOptions[key].url;
     }
+
+    // --- Roof Type "Other" logic
     function showOtherRoofType() {
       var rt = document.getElementById('roofType');
       var rto = document.getElementById('roofTypeOther');
       rto.style.display = (rt.value === 'Other') ? '' : 'none';
       updateSummary();
     }
+
+    // --- Date default
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
+
+    // --- Geolocation to autofill address
     window.onload = function() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async function(pos) {
@@ -291,6 +319,7 @@
       updateSummary();
       setTimeout(initOverviewMap, 200); // Wait for DOM
     };
+
     function updateSummary() {
       document.getElementById('sumStore').textContent = document.getElementById('store').value || "";
       document.getElementById('sumStoreNum').textContent = document.getElementById('storeNum').value || "";
@@ -309,7 +338,8 @@
       document.getElementById('sumCountry').textContent = document.getElementById('country').value || "";
       updateOverviewMap();
     }
-    // Technician Dropdown with Add Feature
+
+    // --- Technician Dropdown with Add Feature
     const technicianSelect = document.getElementById('technician');
     const addTechPrompt = document.getElementById('addTechPrompt');
     const addTechInput = document.getElementById('addTechInput');
@@ -342,7 +372,67 @@
       technicianSelect.value = '';
       updateSummary();
     };
-    // Item logic & cropper handling
+
+    // --- IMAGE CROPPER AND COMPRESSION
+    let cropper = null, cropperFile = null, cropperItemId = null, cropperImgs = [], cropperImgsIdx = 0, cropperInput = null;
+    async function handleImageInput(e, itemIdx) {
+      cropperInput = e.target;
+      const files = Array.from(cropperInput.files);
+      cropperImgs = files;
+      cropperImgsIdx = 0;
+      cropperItemId = itemIdx;
+      if (files.length > 0) openCropperForFile(files[0]);
+    }
+    function openCropperForFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('cropperImage').src = evt.target.result;
+        document.getElementById('cropperModal').style.display = 'flex';
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(document.getElementById('cropperImage'), {
+          aspectRatio: 4 / 3,
+          viewMode:1,
+          autoCropArea:1
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+    function rotateCropper() {
+      if (cropper) cropper.rotate(90);
+    }
+    async function confirmCropper() {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({width:1200, height:900, fillColor:'#fff'});
+      // Compress to JPEG at ~75% quality
+      canvas.toBlob(async function(blob) {
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+        saveCroppedImgToPreview({blob, dataUrl}, cropperItemId);
+        cropperImgsIdx++;
+        if (cropperImgsIdx < cropperImgs.length) {
+          cropper.destroy(); cropper = null;
+          openCropperForFile(cropperImgs[cropperImgsIdx]);
+        } else {
+          cropper.destroy(); cropper = null;
+          document.getElementById('cropperModal').style.display = 'none';
+        }
+      }, "image/jpeg", 0.75);
+    }
+    function cancelCropper() {
+      if (cropper) cropper.destroy();
+      cropper = null;
+      document.getElementById('cropperModal').style.display = 'none';
+    }
+    function saveCroppedImgToPreview(obj, itemIdx) {
+      const itemDiv = document.getElementById('item'+itemIdx);
+      if (!itemDiv.compressedImages) itemDiv.compressedImages = [];
+      itemDiv.compressedImages.push(obj);
+      const previewDiv = itemDiv.querySelector('.pictures-preview');
+      const img = document.createElement('img');
+      img.src = obj.dataUrl;
+      previewDiv.appendChild(img);
+    }
+
+    // --- Items logic
     let itemIdx = 0;
     function addItem() {
       itemIdx++;
@@ -379,7 +469,7 @@
       `;
       container.appendChild(div);
       initMap('map'+itemIdx, 'lat'+itemIdx, 'lng'+itemIdx, 'coord'+itemIdx);
-      div.croppedImages = [];
+      div.compressedImages = [];
       updateOverviewMap();
     }
     function removeItem(id) {
@@ -389,62 +479,8 @@
     function updateDescInline(idx, value) {
       document.getElementById(`desc-inline-${idx}`).textContent = value.trim() || "(no description yet)";
     }
-    // IMAGE CROPPER POPUP LOGIC
-    let cropper = null, cropperFile = null, cropperItemId = null, cropperImgs = [], cropperImgsIdx = 0, cropperInput = null;
-    async function handleImageInput(e, itemIdx) {
-      cropperInput = e.target;
-      const files = Array.from(cropperInput.files);
-      cropperImgs = files;
-      cropperImgsIdx = 0;
-      cropperItemId = itemIdx;
-      if (files.length > 0) openCropperForFile(files[0]);
-    }
-    function openCropperForFile(file) {
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        document.getElementById('cropperImage').src = evt.target.result;
-        document.getElementById('cropperModal').style.display = 'flex';
-        if (cropper) cropper.destroy();
-        cropper = new Cropper(document.getElementById('cropperImage'), {
-          aspectRatio: 4 / 3,
-          viewMode:1,
-          autoCropArea:1
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-    function rotateCropper() {
-      if (cropper) cropper.rotate(90);
-    }
-    async function confirmCropper() {
-      if (!cropper) return;
-      const canvas = cropper.getCroppedCanvas({width:1200, height:900, fillColor:'#fff'});
-      const dataUrl = canvas.toDataURL("image/jpeg",0.94);
-      saveCroppedImgToPreview(dataUrl, cropperItemId);
-      cropperImgsIdx++;
-      if (cropperImgsIdx < cropperImgs.length) {
-        cropper.destroy(); cropper = null;
-        openCropperForFile(cropperImgs[cropperImgsIdx]);
-      } else {
-        cropper.destroy(); cropper = null;
-        document.getElementById('cropperModal').style.display = 'none';
-      }
-    }
-    function cancelCropper() {
-      if (cropper) cropper.destroy();
-      cropper = null;
-      document.getElementById('cropperModal').style.display = 'none';
-    }
-    function saveCroppedImgToPreview(dataUrl, itemIdx) {
-      const itemDiv = document.getElementById('item'+itemIdx);
-      if (!itemDiv.croppedImages) itemDiv.croppedImages = [];
-      itemDiv.croppedImages.push(dataUrl);
-      const previewDiv = itemDiv.querySelector('.pictures-preview');
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      previewDiv.appendChild(img);
-    }
-    // MapTiler map logic (uses current position)
+
+    // --- MAPTILER + OVERVIEW MAP
     function initMap(mapId, latId, lngId, coordId) {
       const apiKey = "D07LNHRpX8QqmkT39Nza";
       const latInput = document.getElementById(latId);
@@ -486,7 +522,6 @@
         showMap(-22.9068, -43.1729);
       }
     }
-
     // Overview map logic with default center/zoom on item 1
     let overviewMap, overviewMapMarkers = [];
     let overviewMapInitialized = false;
@@ -524,14 +559,13 @@
           overviewMapMarkers.push(marker);
         }
       }
-      // Only auto-center on the first item if the user hasn't interacted yet
       if (!overviewMapInitialized && firstLatLng) {
         overviewMap.setView(firstLatLng, 18);
         overviewMapInitialized = true;
       }
     }
 
-    // PDF GENERATION uses the *current state of the overview map* for the report!
+    // PDF logic (same as in previous code, but using .compressedImages[n].dataUrl for PDF images)
     document.getElementById('generatePDF').onclick = async function() {
       const jsPDF = window.jspdf.jsPDF;
       const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
@@ -551,58 +585,56 @@
       const tech = document.getElementById('technician').value;
       const store = document.getElementById('store').value;
       const storeNum = document.getElementById('storeNum').value;
-      const logoObj = logoOptions[selectedLogo];
-      // --- PDF HEADER WITH LOGO ---
-      let logoImage = await getImageDataUrl(logoObj.url);
-      const logoDisplayWidth = 220;
-      const aspect = logoObj.h / logoObj.w;
-      const logoDisplayHeight = logoDisplayWidth * aspect;
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const logoX = (pageWidth - logoDisplayWidth) / 2;
-      pdf.addImage(logoImage, 'PNG', logoX, y-10, logoDisplayWidth, logoDisplayHeight);
-      y += logoDisplayHeight + 16;
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(33, 53, 89);
-      pdf.setFontSize(20);
-      pdf.text('Field Report', leftMargin, y);
-      y += 10;
-      // Neatly left-align info
-      pdf.setFontSize(12); pdf.setTextColor(30,30,45); pdf.setFont(undefined, "normal");
-      pdf.text(`Store: ${store}  |  Store #: ${storeNum}`, leftMargin, y+=22);
-      pdf.text(`Technician: ${tech}`, leftMargin, y+=17);
-      pdf.text(`Roof: ${roofType}  |  Condition: ${roofCondition}  |  Access: ${roofAccess}`, leftMargin, y+=17);
-      pdf.text(`Date: ${date}`, leftMargin, y+=17);
-      pdf.text(`Address: ${street} ${number}, ${city}, ${state} ${zip}, ${country}`, leftMargin, y+=17);
-      y += 4;
-      pdf.setFontSize(16);
-      pdf.setTextColor(33, 53, 89);
-      pdf.text('Items', leftMargin, y+=15);
+
+      // --- Logo
+      try {
+        const logoDataUrl = await getImageDataUrl(logoOptions[selectedLogo].url);
+        pdf.addImage(logoDataUrl, 'PNG', (pdf.internal.pageSize.getWidth()-160)/2, y, 160, 54);
+        y += 60;
+      } catch(e){}
+
+      // --- Info block
+      pdf.setFontSize(16); pdf.setTextColor(33,53,89);
+      pdf.text('Store:', leftMargin, y+15);         pdf.setFontSize(14); pdf.text(store, leftMargin+52, y+15);
+      pdf.setFontSize(16); pdf.text('Store #:', leftMargin+210, y+15); pdf.setFontSize(14); pdf.text(storeNum, leftMargin+277, y+15);
+      pdf.setFontSize(16); pdf.text('Technician:', leftMargin, y+37);  pdf.setFontSize(14); pdf.text(tech, leftMargin+87, y+37);
+      pdf.setFontSize(16); pdf.text('Roof:', leftMargin, y+59); pdf.setFontSize(14); pdf.text(roofType, leftMargin+42, y+59);
+      pdf.setFontSize(16); pdf.text('Condition:', leftMargin+210, y+59); pdf.setFontSize(14); pdf.text(roofCondition, leftMargin+92+210, y+59);
+      pdf.setFontSize(16); pdf.text('Access:', leftMargin, y+81); pdf.setFontSize(14); pdf.text(roofAccess, leftMargin+57, y+81);
+      pdf.setFontSize(16); pdf.text('Date:', leftMargin, y+103); pdf.setFontSize(14); pdf.text(date, leftMargin+39, y+103);
+      pdf.setFontSize(16); pdf.text('Address:', leftMargin, y+125); pdf.setFontSize(14);
+      pdf.text(`${street} ${number}, ${city} ${state}, ${zip}, ${country}`, leftMargin+62, y+125, {maxWidth:pdf.internal.pageSize.getWidth()-leftMargin-62-30});
+      y += 138;
+
+      pdf.setFontSize(16); pdf.setTextColor(33, 53, 89);
+      pdf.text('Items', leftMargin, y+=10);
       pdf.setTextColor(40,40,52);
+
       // --- ITEMS ---
       const itemSections = document.querySelectorAll('.item-section');
       const locations = [];
       for (let i = 0; i < itemSections.length; i++) {
         let sec = itemSections[i];
         let desc = sec.querySelector('textarea').value;
-        let imgs = sec.croppedImages || [];
+        let imgs = sec.compressedImages || [];
         const coord = sec.querySelector('[id^="coord"]').textContent;
         const lat = sec.querySelector('[id^="lat"]').value;
         const lng = sec.querySelector('[id^="lng"]').value;
         if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
-        let itemBlockHeight = 90 + (Math.ceil(imgs.length/2) * 135);
+        let itemBlockHeight = 90 + (Math.ceil(imgs.length/2) * 145);
         if (y + itemBlockHeight > pageHeight - 60) { pdf.addPage(); y = 38; }
         pdf.setFontSize(14); pdf.setTextColor(33,53,89);
-        pdf.text(`Item #${i+1}:`, leftMargin, y+=26);
+        pdf.text(`Item #${i+1}:`, leftMargin, y+=28);
         pdf.setFontSize(12); pdf.setTextColor(40,40,52);
-        pdf.text(desc, leftMargin+62, y-2);
-        pdf.text(`Location: ${coord}`, leftMargin, y+=18);
-        let imgY = y+4, imgX = leftMargin, imgWidth = 180, imgHeight = 135, gapX = 18;
+        pdf.text(desc, leftMargin+62, y-2, {maxWidth:340});
+        pdf.text(`Location: ${coord}`, leftMargin, y+=19);
+        let imgY = y+3, imgX = leftMargin, imgWidth = 190, imgHeight = 140, gapX = 24;
         for (let j = 0; j < imgs.length; j += 2) {
           if (imgY+imgHeight > pageHeight-60) { pdf.addPage(); imgY = 38; }
           for (let k = 0; k < 2 && j+k < imgs.length; k++) {
-            pdf.addImage(imgs[j+k], 'JPEG', imgX+(k*(imgWidth+gapX)), imgY, imgWidth, imgHeight);
+            pdf.addImage(imgs[j+k].dataUrl, 'JPEG', imgX+(k*(imgWidth+gapX)), imgY, imgWidth, imgHeight);
           }
-          imgY += imgHeight+12;
+          imgY += imgHeight+10;
         }
         y = imgY+2;
       }
@@ -610,6 +642,7 @@
       if (locations.length > 0) await generateAllItemsMapPDF_fromLive(overviewMap, pdf);
       pdf.save(`field-report-${date}.pdf`);
     };
+
     function getImageDataUrl(url) {
       return new Promise(res=>{
         let img = new window.Image();
@@ -624,6 +657,7 @@
         img.src = url;
       });
     }
+
     // Overview map snapshot logic:
     async function generateAllItemsMapPDF_fromLive(map, pdf) {
       return new Promise((resolve) => {
@@ -644,6 +678,120 @@
         }, 500);
       });
     }
+
+    // FIREBASE SAVE/LOAD/EDIT INTEGRATION
+
+    document.getElementById('saveReportBtn').onclick = async function() {
+      let reportData = {
+        logo: selectedLogo,
+        roofCondition: document.getElementById('roofCondition').value,
+        roofType: (document.getElementById('roofType').value === "Other" ? document.getElementById('roofTypeOther').value : document.getElementById('roofType').value),
+        roofAccess: document.getElementById('roofAccess').value,
+        street: document.getElementById('street').value,
+        number: document.getElementById('number').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        zip: document.getElementById('zip').value,
+        country: document.getElementById('country').value,
+        date: document.getElementById('date').value,
+        technician: document.getElementById('technician').value,
+        store: document.getElementById('store').value,
+        storeNum: document.getElementById('storeNum').value,
+        items: [],
+        created: new Date()
+      };
+      const itemSections = document.querySelectorAll('.item-section');
+      for (let i = 0; i < itemSections.length; i++) {
+        let sec = itemSections[i];
+        let desc = sec.querySelector('textarea').value;
+        let imgs = sec.compressedImages || [];
+        let coord = sec.querySelector('[id^="coord"]').textContent;
+        let lat = sec.querySelector('[id^="lat"]').value;
+        let lng = sec.querySelector('[id^="lng"]').value;
+        let imgUrls = [];
+        for (let j = 0; j < imgs.length; j++) {
+          if (imgs[j].blob) {
+            const fileBlob = imgs[j].blob;
+            const storageRef = storage.ref(`reports/${Date.now()}_${Math.random().toString(36).substr(2,6)}.jpg`);
+            await storageRef.put(fileBlob);
+            const url = await storageRef.getDownloadURL();
+            imgUrls.push(url);
+          } else if (imgs[j].dataUrl && imgs[j].dataUrl.startsWith("http")) {
+            imgUrls.push(imgs[j].dataUrl);
+          }
+        }
+        reportData.items.push({
+          desc, coord, lat, lng, imgUrls
+        });
+      }
+      if (window.editingReportId) {
+        await db.collection('reports').doc(window.editingReportId).set(reportData);
+        alert('Report updated!');
+      } else {
+        await db.collection('reports').add(reportData);
+        alert('Report saved!');
+      }
+      document.getElementById('newReportBtn').style.display = '';
+    };
+
+    async function listReports() {
+      const snap = await db.collection('reports').orderBy('created', 'desc').limit(30).get();
+      const ul = document.getElementById('reportList');
+      ul.innerHTML = '';
+      snap.forEach(doc => {
+        const data = doc.data();
+        let li = document.createElement('li');
+        li.innerHTML = `<b>${data.store || 'No store'}</b> (${data.date}) 
+          <button onclick="loadReport('${doc.id}')">Edit/Update</button>`;
+        ul.appendChild(li);
+      });
+    }
+
+    async function loadReport(reportId) {
+      window.editingReportId = reportId;
+      document.getElementById('newReportBtn').style.display = '';
+      const doc = await db.collection('reports').doc(reportId).get();
+      const data = doc.data();
+      selectedLogo = data.logo || "seal";
+      selectLogo(document.querySelector(`.logo-choice[onclick*="${selectedLogo}"]`), selectedLogo);
+      document.getElementById('roofCondition').value = data.roofCondition || "";
+      document.getElementById('roofType').value = ["PVC","TPO","Modified","Metal"].includes(data.roofType) ? data.roofType : "Other";
+      document.getElementById('roofTypeOther').value = !["PVC","TPO","Modified","Metal"].includes(data.roofType) ? data.roofType : "";
+      document.getElementById('roofAccess').value = data.roofAccess || "";
+      document.getElementById('street').value = data.street || "";
+      document.getElementById('number').value = data.number || "";
+      document.getElementById('city').value = data.city || "";
+      document.getElementById('state').value = data.state || "";
+      document.getElementById('zip').value = data.zip || "";
+      document.getElementById('country').value = data.country || "";
+      document.getElementById('date').value = data.date || "";
+      document.getElementById('technician').value = data.technician || "";
+      document.getElementById('store').value = data.store || "";
+      document.getElementById('storeNum').value = data.storeNum || "";
+      document.getElementById('itemsContainer').innerHTML = '';
+      itemIdx = 0;
+      for (let i = 0; i < (data.items || []).length; i++) {
+        addItem();
+        let sec = document.getElementById('item'+(i+1));
+        sec.querySelector('textarea').value = data.items[i].desc || "";
+        updateDescInline(i+1, data.items[i].desc || "");
+        sec.querySelector('[id^="coord"]').textContent = data.items[i].coord || "";
+        sec.querySelector('[id^="lat"]').value = data.items[i].lat || "";
+        sec.querySelector('[id^="lng"]').value = data.items[i].lng || "";
+        sec.compressedImages = [];
+        for (let j = 0; j < (data.items[i].imgUrls || []).length; j++) {
+          sec.compressedImages.push({blob: null, dataUrl: data.items[i].imgUrls[j]});
+          const previewDiv = sec.querySelector('.pictures-preview');
+          const img = document.createElement('img');
+          img.src = data.items[i].imgUrls[j];
+          previewDiv.appendChild(img);
+        }
+      }
+      updateSummary();
+      setTimeout(initOverviewMap, 350);
+    }
+    document.getElementById('newReportBtn').onclick = function() { location.reload(); };
+
     document.getElementById('reportForm').onsubmit = function(e) {
       e.preventDefault();
       alert("Report submitted! (Handle save/export logic here)");
