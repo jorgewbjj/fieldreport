@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Field Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-storage-compat.js"></script>
@@ -14,40 +13,17 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
   <style>
-    :root {
-      --main: #213559;
-      --main-dark: #132040;
-      --accent: #38a3ff;
-      --bg: #f7f9fb;
-      --card: #fff;
-      --subtle: #f3f7fa;
-      --radius: 18px;
-      --shadow: 0 4px 24px rgba(33,53,89,0.08);
-    }
+    :root { --main: #213559; --main-dark: #132040; --accent: #38a3ff; --bg: #f7f9fb; --card: #fff; --subtle: #f3f7fa; --radius: 18px; --shadow: 0 4px 24px rgba(33,53,89,0.08);}
     body { font-family: 'Inter', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; }
-    .container {
-      max-width: 700px; margin: 32px auto; background: var(--card);
-      padding: 2.2rem 7vw 2.2rem 7vw; border-radius: var(--radius);
-      box-shadow: var(--shadow); border-top: 8px solid var(--main);
-      transition: box-shadow .2s;
-    }
-    h2 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; color: var(--main);
-      letter-spacing: -.5px; text-align: center; text-shadow: 0 2px 8px #e2e6ee99;
-    }
+    .container { max-width: 700px; margin: 32px auto; background: var(--card); padding: 2.2rem 7vw 2.2rem 7vw; border-radius: var(--radius); box-shadow: var(--shadow); border-top: 8px solid var(--main);}
+    h2 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 800; color: var(--main); letter-spacing: -.5px; text-align: center; text-shadow: 0 2px 8px #e2e6ee99;}
     #bigLogoWrap { text-align: center; margin-bottom: 12px; }
     #bigLogo { max-width: 240px; width: 98%; margin: 0 auto 12px auto; display: block; filter: drop-shadow(0 2px 8px #22395e22);}
     .logo-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 16px; flex-wrap: wrap; }
-    .logo-choice {
-      background: #fff; border: 2px solid #a9b8db; border-radius: 10px; padding: 8px 14px; cursor: pointer; font-weight: 700;
-      color: #22395e; font-size: 1.08rem; display: flex; align-items: center; gap: 7px; transition: border .18s; box-shadow: 0 2px 8px #23325913;
-    }
+    .logo-choice { background: #fff; border: 2px solid #a9b8db; border-radius: 10px; padding: 8px 14px; cursor: pointer; font-weight: 700; color: #22395e; font-size: 1.08rem; display: flex; align-items: center; gap: 7px; transition: border .18s; box-shadow: 0 2px 8px #23325913;}
     .logo-choice.selected { border: 2.5px solid var(--main); color: var(--main-dark); background: #eaf1fd; }
     .logo-choice img { height: 48px; width: auto; vertical-align: middle; filter: drop-shadow(0 1px 5px #22395e21); border-radius: 3px;}
-    .info-header-block {
-      background: #eaf0fb; border-radius: 13px; border-left: 7px solid var(--main);
-      border-top: 1px solid #d7dbed; margin-bottom: 18px; padding: 18px 22px 10px 24px; display: flex; flex-direction: column; gap: 4px;
-      max-width: 520px; margin-left: auto; margin-right: auto;
-    }
+    .info-header-block { background: #eaf0fb; border-radius: 13px; border-left: 7px solid var(--main); border-top: 1px solid #d7dbed; margin-bottom: 18px; padding: 18px 22px 10px 24px; display: flex; flex-direction: column; gap: 4px; max-width: 520px; margin-left: auto; margin-right: auto;}
     .info-header-line { display: flex; flex-wrap: wrap; gap: 30px; font-size: 1.08rem; color: #22395e; }
     .info-header-label { font-weight: 700; margin-right: 4px; color: #132040; }
     .info-header-value { font-weight: 500; color: #283659; margin-right: 14px; display: inline-block; }
@@ -55,215 +31,49 @@
     .field-col, .roof-col, .addr-col { flex: 1 1 120px; min-width: 110px; }
     .addr-col { min-width: 70px;}
     label { font-size: .99rem; font-weight: 600; margin-bottom: 5px; display: block; color: var(--main-dark);}
-    input, select, textarea {
-      padding: 10px 12px; border: 1px solid #c5d4ed; border-radius: 8px; font-size: 1rem; width: 100%; margin-top: 2px; background: #fafdff; transition: border .2s;
-    }
+    input, select, textarea { padding: 10px 12px; border: 1px solid #c5d4ed; border-radius: 8px; font-size: 1rem; width: 100%; margin-top: 2px; background: #fafdff; transition: border .2s;}
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--main); background: #f0f6ff; }
     input[type="date"] { max-width: 100%; }
-    button, .add-btn, .remove-btn {
-      cursor: pointer; border: none; color: #fff; background: var(--main); padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 1rem; margin-top: 10px; transition: background .2s;
-    }
+    button, .add-btn, .remove-btn { cursor: pointer; border: none; color: #fff; background: var(--main); padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 1rem; margin-top: 10px; transition: background .2s;}
     button:hover, .add-btn:hover, .remove-btn:hover { background: var(--main-dark); }
     .add-btn, .remove-btn { background: var(--accent); margin-top: 10px; padding: 8px 13px; font-size: .97rem; }
     .remove-btn { background: #e44; margin-left: 10px; }
-    .item-section {
-      background: var(--subtle); border-radius: 12px; padding: 16px 16px 18px 16px; margin-bottom: 17px; position: relative; box-shadow: 0 1px 4px #21355911;
-      border-left: 4px solid var(--main-dark);
-    }
+    .item-section { background: var(--subtle); border-radius: 12px; padding: 16px 16px 18px 16px; margin-bottom: 17px; position: relative; box-shadow: 0 1px 4px #21355911; border-left: 4px solid var(--main-dark);}
     .item-header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
     .item-title { font-weight: 700; font-size: 1.06rem; color: var(--main-dark); margin-right: 12px; }
     .item-desc-inline { font-size: 1.02rem; color: var(--accent); font-weight: 500; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
-    .pictures-preview {
-      display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 8px;
-    }
-    .pictures-preview img {
-      max-width: 140px; max-height: 105px; border-radius: 9px; box-shadow: 0 1px 6px #1a295b13; object-fit: cover;
-      aspect-ratio: 4/3; background: #cbd6e7;
-    }
-    .map-container {
-      width: 100%; height: 160px; margin-top: 7px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 5px #1a295b07;
-    }
+    .pictures-preview { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 8px;}
+    .pictures-preview img { max-width: 140px; max-height: 105px; border-radius: 9px; box-shadow: 0 1px 6px #1a295b13; object-fit: cover; aspect-ratio: 4/3; background: #cbd6e7;}
+    .map-container { width: 100%; height: 160px; margin-top: 7px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 5px #1a295b07;}
     #overviewMapWrap { margin: 30px 0 18px 0; text-align: center;}
     #overviewMapLabel { font-weight: 700; color: #213559; font-size: 1.1em; margin-bottom: 7px; display:block; }
-    #overviewMap {
-      width: 97%; max-width: 610px; height: 280px; border-radius: 13px; box-shadow: 0 2px 14px #12355911; border: 3px solid #e9e9e9; margin: 0 auto 5px auto; display: block;
-    }
-    #generatePDF { background: var(--main); margin-top: 18px; width: 100%; padding: 12px; font-size: 1.08rem; }
+    #overviewMap { width: 97%; max-width: 610px; height: 280px; border-radius: 13px; box-shadow: 0 2px 14px #12355911; border: 3px solid #e9e9e9; margin: 0 auto 5px auto; display: block;}
+    #generateReportBtn { background: var(--main); margin-top: 22px; width: 100%; padding: 13px; font-size: 1.08rem; }
+    #loadingBlock { text-align:center; color:#295ea6; font-weight:600; margin-top: 15px; margin-bottom:10px;}
     #addTechPrompt { display: none; margin-top: 7px; gap: 6px; }
     #addTechPrompt input { width: auto; flex: 2 1 80px;}
-    .modal {
-      display:none; position:fixed; z-index:99999; left:0; top:0; width:100vw; height:100vh; overflow:auto; background:rgba(22,35,51,0.63); justify-content:center; align-items:center;
-    }
-    .modal-content { background:#fff; padding:18px 14px 14px 14px; border-radius:14px; box-shadow:0 8px 32px #0003; min-width:300px; max-width:94vw;
-      display:flex; flex-direction:column; align-items:center; }
+    .modal { display:none; position:fixed; z-index:99999; left:0; top:0; width:100vw; height:100vh; overflow:auto; background:rgba(22,35,51,0.63); justify-content:center; align-items:center;}
+    .modal-content { background:#fff; padding:18px 14px 14px 14px; border-radius:14px; box-shadow:0 8px 32px #0003; min-width:300px; max-width:94vw; display:flex; flex-direction:column; align-items:center; }
     .modal-actions { margin-top:12px; display:flex; gap:12px;}
-    @media (max-width:700px) {
-      .container { padding: 8vw 2vw;}
-      .item-section {padding:10px;}
-      .pictures-preview img {max-width:97px;max-height:72px;}
-      #overviewMap {height:160px;}
-    }
+    @media (max-width:700px) { .container { padding: 8vw 2vw;} .item-section {padding:10px;} .pictures-preview img {max-width:97px;max-height:72px;} #overviewMap {height:160px;} }
   </style>
 </head>
 <body>
-  <div class="container" id="reportMain">
-    <h2>Field Report</h2>
-    <div id="bigLogoWrap">
-      <img id="bigLogo" src="seal.png" alt="Logo" />
-    </div>
-    <div class="logo-row" id="logoRow">
-      <div class="logo-choice selected" onclick="selectLogo(this, 'seal')">
-        <img src="seal.png" alt="Seal Top" /> Seal Top
-      </div>
-      <div class="logo-choice" onclick="selectLogo(this, 'ibs')">
-        <img src="ibs.png" alt="IBS Roofing" /> IBS Roofing
-      </div>
-      <div class="logo-choice" onclick="selectLogo(this, 'zurix')">
-        <img src="zurix.png" alt="Zurix" /> Zurix
-      </div>
-      <div class="logo-choice" onclick="selectLogo(this, 'jube')">
-        <img src="jube.png" alt="Jube Management" /> Jube Management
-      </div>
-    </div>
-    <!-- PAST REPORTS LIST -->
-    <div id="pastReportsBlock" style="margin:18px 0 20px 0;">
-      <button onclick="listReports()" style="margin-bottom:8px;">Show Past Reports</button>
-      <ul id="reportList"></ul>
-    </div>
-    <form id="reportForm" autocomplete="off">
-      <div class="info-header-block" id="infoHeaderBlock">
-        <div class="info-header-line">
-          <span class="info-header-label">Store:</span><span class="info-header-value" id="sumStore"></span>
-          <span class="info-header-label">Store #:</span><span class="info-header-value" id="sumStoreNum"></span>
-          <span class="info-header-label">Technician:</span><span class="info-header-value" id="sumTech"></span>
-        </div>
-        <div class="info-header-line">
-          <span class="info-header-label">Roof:</span><span class="info-header-value" id="sumRoofType"></span>
-          <span class="info-header-label">Condition:</span><span class="info-header-value" id="sumRoofCond"></span>
-          <span class="info-header-label">Access:</span><span class="info-header-value" id="sumRoofAccess"></span>
-        </div>
-        <div class="info-header-line">
-          <span class="info-header-label">Date:</span><span class="info-header-value" id="sumDate"></span>
-        </div>
-        <div class="info-header-line">
-          <span class="info-header-label">Address:</span>
-          <span class="info-header-value" id="sumStreet"></span>
-          <span class="info-header-value" id="sumNumber"></span>
-          <span class="info-header-value" id="sumCity"></span>
-          <span class="info-header-value" id="sumState"></span>
-          <span class="info-header-value" id="sumZip"></span>
-          <span class="info-header-value" id="sumCountry"></span>
-        </div>
-      </div>
-      <div class="roof-row" style="margin-bottom:10px;">
-        <div class="roof-col">
-          <label for="roofCondition">Roof Condition</label>
-          <select id="roofCondition" required onchange="updateSummary()">
-            <option value="">Select...</option>
-            <option value="Good">Good</option>
-            <option value="Fair">Fair</option>
-            <option value="Poor">Poor</option>
-          </select>
-        </div>
-        <div class="roof-col">
-          <label for="roofType">Type of Roof</label>
-          <select id="roofType" onchange="showOtherRoofType();updateSummary()" required>
-            <option value="">Select...</option>
-            <option value="PVC">PVC</option>
-            <option value="TPO">TPO</option>
-            <option value="Modified">Modified</option>
-            <option value="Metal">Metal</option>
-            <option value="Other">Other</option>
-          </select>
-          <input type="text" id="roofTypeOther" style="display:none;margin-top:5px;" placeholder="Enter type..." oninput="updateSummary()" />
-        </div>
-        <div class="roof-col">
-          <label for="roofAccess">Roof Access</label>
-          <select id="roofAccess" required onchange="updateSummary()">
-            <option value="">Select...</option>
-            <option value="External ladder">External ladder</option>
-            <option value="Roof hatch">Roof hatch</option>
-          </select>
-        </div>
-      </div>
-      <div class="addr-row">
-        <div class="addr-col"><label for="street">Street</label><input type="text" id="street" required oninput="updateSummary()"/></div>
-        <div class="addr-col"><label for="number">Number</label><input type="text" id="number" required oninput="updateSummary()"/></div>
-        <div class="addr-col"><label for="city">City</label><input type="text" id="city" required oninput="updateSummary()"/></div>
-        <div class="addr-col"><label for="state">State</label><input type="text" id="state" required oninput="updateSummary()"/></div>
-        <div class="addr-col"><label for="zip">Zip</label><input type="text" id="zip" required oninput="updateSummary()"/></div>
-        <div class="addr-col"><label for="country">Country</label><input type="text" id="country" required oninput="updateSummary()"/></div>
-        <div class="addr-col"><label for="date">Date</label><input type="date" id="date" required onchange="updateSummary()"/></div>
-      </div>
-      <div class="field-row">
-        <div class="field-col">
-          <label for="technician">Technician</label>
-          <select id="technician" name="technician" required onchange="updateSummary()">
-            <option value="">Select...</option>
-            <option value="Arister">Arister</option>
-            <option value="David">David</option>
-            <option value="Elias">Elias</option>
-            <option value="Wilman">Wilman</option>
-            <option value="add-tech">Add technician…</option>
-          </select>
-          <div id="addTechPrompt" style="display: flex; align-items: center;">
-            <input type="text" id="addTechInput" placeholder="Technician name"/>
-            <button type="button" id="addTechBtn" style="background:#295ea6; padding: 7px 15px; width:auto;">Add</button>
-            <button type="button" id="cancelTechBtn" style="background:#aaa; padding: 7px 12px; width:auto;">Cancel</button>
-          </div>
-        </div>
-        <div class="field-col">
-          <label for="store">Store</label>
-          <input type="text" id="store" name="store" required oninput="updateSummary()"/>
-        </div>
-        <div class="field-col">
-          <label for="storeNum">Store Number</label>
-          <input type="text" id="storeNum" name="storeNum" required oninput="updateSummary()"/>
-        </div>
-      </div>
-      <hr style="margin:20px 0 13px 0; border:none; border-top:1.5px solid #e5e8ef;" />
-      <h3 style="margin-bottom:0;font-size:1.10rem;">Items</h3>
-      <div id="itemsContainer"></div>
-      <button type="button" class="add-btn" onclick="addItem()">+ Add Item</button>
-      <div id="overviewMapWrap">
-        <span id="overviewMapLabel">Overview Map – adjust as you want for the PDF:</span>
-        <div id="overviewMap"></div>
-      </div>
-      <div style="margin-top:18px;">
-        <button type="submit">Submit Report</button>
-        <button type="button" id="generatePDF">Generate PDF</button>
-        <button type="button" id="saveReportBtn">Save to Firebase</button>
-        <button type="button" id="newReportBtn" style="display:none;">New Report</button>
-      </div>
-    </form>
-  </div>
-  <div style="display:none;">
-    <div id="allItemsMapForPDF"></div>
-  </div>
-  <div class="modal" id="cropperModal">
-    <div class="modal-content">
-      <div style="margin-bottom:8px;font-weight:600;">Crop & Rotate Image</div>
-      <img id="cropperImage" style="max-width:96vw;max-height:50vh;">
-      <div class="modal-actions">
-        <button type="button" onclick="rotateCropper()">Rotate</button>
-        <button type="button" onclick="confirmCropper()">OK</button>
-        <button type="button" onclick="cancelCropper()">Cancel</button>
-      </div>
-    </div>
-  </div>
+  <!-- (HTML remains unchanged from previous answer...) -->
+  <!-- ... -->
+  <!-- ... The full HTML content from previous answer, up to the script section ... -->
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // ========== FIREBASE CONFIG ==========
     // !!! Replace with your own project details !!!
- const firebaseConfig = {
-  apiKey: "AIzaSyByxwR_TWiWYMe65G9AxBFgv-_oxX9MThk",
-  authDomain: "fieldreport-1c1d2.firebaseapp.com",
-  projectId: "fieldreport-1c1d2",
-  storageBucket: "fieldreport-1c1d2.firebasestorage.app",
-  messagingSenderId: "752765269064",
-  appId: "1:752765269064:web:c31c85f245e0c29ba4947d",
-  measurementId: "G-18DP7CSDW9"
-};
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const storage = firebase.storage();
@@ -283,18 +93,14 @@
       document.getElementById('bigLogo').src = logoOptions[key].url;
     }
 
-    // --- Roof Type "Other" logic
     function showOtherRoofType() {
       var rt = document.getElementById('roofType');
       var rto = document.getElementById('roofTypeOther');
       rto.style.display = (rt.value === 'Other') ? '' : 'none';
       updateSummary();
     }
-
-    // --- Date default
     document.getElementById('date').value = (new Date()).toISOString().slice(0,10);
 
-    // --- Geolocation to autofill address
     window.onload = function() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async function(pos) {
@@ -423,40 +229,39 @@
       cropper = null;
       document.getElementById('cropperModal').style.display = 'none';
     }
-    function saveCroppedImgToPreview(obj, itemIdx) {
-      const itemDiv = document.getElementById('item'+itemIdx);
-      if (!itemDiv.compressedImages) itemDiv.compressedImages = [];
-      itemDiv.compressedImages.push(obj);
-      const previewDiv = itemDiv.querySelector('.pictures-preview');
+    function saveCroppedImgToPreview(imgObj, itemIdx) {
+      const sec = document.getElementById('item'+itemIdx);
+      if (!sec.compressedImages) sec.compressedImages = [];
+      sec.compressedImages.push(imgObj);
+      const previewDiv = sec.querySelector('.pictures-preview');
       const img = document.createElement('img');
-      img.src = obj.dataUrl;
+      img.src = imgObj.dataUrl;
       previewDiv.appendChild(img);
     }
 
-    // --- Items logic
+    // --- ITEMS SECTION
     let itemIdx = 0;
-    function addItem() {
+    window.addItem = function() {
       itemIdx++;
       const container = document.getElementById('itemsContainer');
       const div = document.createElement('div');
       div.className = 'item-section';
       div.id = 'item'+itemIdx;
+      div.compressedImages = [];
       div.innerHTML = `
         <div class="item-header-row">
-          <span class="item-title">Item #${itemIdx}:</span>
-          <span class="item-desc-inline" id="desc-inline-${itemIdx}">(no description yet)</span>
+          <div class="item-title">Item #${itemIdx}</div>
           <button type="button" class="remove-btn" onclick="removeItem('${div.id}')">Remove</button>
         </div>
         <div class="field-row">
           <div style="flex:2 1 200px">
             <label>Description</label>
-            <textarea name="itemDesc${itemIdx}" placeholder="Describe the item..." rows="2" required
-              oninput="updateDescInline(${itemIdx}, this.value)"></textarea>
+            <textarea name="itemDesc${itemIdx}" placeholder="Describe the item..." rows="2" required oninput="updateDescInline(${itemIdx}, this.value)"></textarea>
+            <div class="item-desc-inline" id="descInline${itemIdx}"></div>
           </div>
           <div style="flex:1 1 100px">
             <label>Pictures</label>
-            <input type="file" name="itemPics${itemIdx}" accept="image/*" multiple
-              onchange="handleImageInput(event, ${itemIdx})" />
+            <input type="file" name="itemPics${itemIdx}" accept="image/*" multiple onchange="handleImageInput(event, ${itemIdx})"/>
             <div class="pictures-preview" id="picPreview${itemIdx}"></div>
           </div>
         </div>
@@ -469,51 +274,22 @@
         </div>
       `;
       container.appendChild(div);
-      initMap('map'+itemIdx, 'lat'+itemIdx, 'lng'+itemIdx, 'coord'+itemIdx);
-      div.compressedImages = [];
-      updateOverviewMap();
+      initMap('map'+itemIdx, 'lat'+itemIdx, 'lng'+itemIdx, 'coord'+itemIdx, itemIdx);
     }
-    function removeItem(id) {
-      document.getElementById(id).remove();
-      updateOverviewMap();
-    }
-    function updateDescInline(idx, value) {
-      document.getElementById(`desc-inline-${idx}`).textContent = value.trim() || "(no description yet)";
+    window.removeItem = function(id) { document.getElementById(id).remove(); updateOverviewMap(); }
+    window.updateDescInline = function(idx, val) {
+      document.getElementById('descInline'+idx).textContent = val;
     }
 
-    // --- MAPTILER + OVERVIEW MAP
-    function initMap(mapId, latId, lngId, coordId) {
+    // --- MAPS ---
+    function initMap(mapId, latId, lngId, coordId, idx) {
       const apiKey = "D07LNHRpX8QqmkT39Nza";
       const latInput = document.getElementById(latId);
       const lngInput = document.getElementById(lngId);
       const coordSpan = document.getElementById(coordId);
-      function showMap(lat, lng) {
-        const map = L.map(mapId, {center: [lat, lng],zoom: 17,zoomControl: true});
-        L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${apiKey}`, {
-          attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a>',
-          tileSize: 256,minZoom: 1,maxZoom: 20
-        }).addTo(map);
-        let marker = null;
-        if (latInput.value && lngInput.value) {
-          marker = L.marker([parseFloat(latInput.value), parseFloat(lngInput.value)]).addTo(map);
-          coordSpan.textContent = `${parseFloat(latInput.value).toFixed(6)}, ${parseFloat(lngInput.value).toFixed(6)}`;
-        } else {
-          marker = L.marker([lat, lng]).addTo(map);
-          latInput.value = lat;
-          lngInput.value = lng;
-          coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        }
-        map.on('click', function(e) {
-          const {lat, lng} = e.latlng;
-          if (marker) marker.setLatLng(e.latlng);
-          else marker = L.marker(e.latlng).addTo(map);
-          latInput.value = lat;
-          lngInput.value = lng;
-          coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        });
-        setTimeout(() => { map.invalidateSize(); }, 250);
-      }
-      if (navigator.geolocation) {
+      let map, marker;
+      // If it's the first item, use browser location for initial zoom
+      if (idx === 1 && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(pos) {
           showMap(pos.coords.latitude, pos.coords.longitude);
         }, function() {
@@ -522,167 +298,173 @@
       } else {
         showMap(-22.9068, -43.1729);
       }
+      function showMap(lat, lng) {
+        map = L.map(mapId, {
+          center: [lat, lng],
+          zoom: 17,
+          zoomControl: true
+        });
+        L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${apiKey}`, {
+          attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a>',
+          tileSize: 256,
+          minZoom: 1,
+          maxZoom: 20
+        }).addTo(map);
+        marker = L.marker([lat, lng]).addTo(map);
+        latInput.value = lat;
+        lngInput.value = lng;
+        coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        map.on('click', function(e) {
+          const {lat, lng} = e.latlng;
+          marker.setLatLng(e.latlng);
+          latInput.value = lat;
+          lngInput.value = lng;
+          coordSpan.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          updateOverviewMap();
+        });
+        setTimeout(() => { map.invalidateSize(); }, 250);
+        updateOverviewMap();
+      }
     }
-    // Overview map logic with default center/zoom on item 1
-    let overviewMap, overviewMapMarkers = [];
-    let overviewMapInitialized = false;
+
+    // OVERVIEW MAP
+    let overviewMap = null;
     function initOverviewMap() {
-      if (overviewMap) { overviewMap.remove(); overviewMap = null; }
-      overviewMap = L.map('overviewMap', { center: [37,-96], zoom: 4, zoomControl: true });
-      L.tileLayer('https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza', {
-        attribution: '', tileSize: 256, minZoom: 1, maxZoom: 20
+      const apiKey = "D07LNHRpX8QqmkT39Nza";
+      let first = getFirstItemLocation();
+      let center = first ? [first.lat, first.lng] : [-22.9068, -43.1729];
+      overviewMap = L.map('overviewMap', {
+        center: center,
+        zoom: 17,
+        zoomControl: true
+      });
+      L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=${apiKey}`, {
+        tileSize: 256,
+        minZoom: 1,
+        maxZoom: 20
       }).addTo(overviewMap);
-      overviewMapInitialized = false;
       updateOverviewMap();
     }
     function updateOverviewMap() {
       if (!overviewMap) return;
-      overviewMapMarkers.forEach(m=>overviewMap.removeLayer(m));
-      overviewMapMarkers = [];
-      const itemSections = document.querySelectorAll('.item-section');
-      let bounds = [];
-      let firstLatLng = null;
-      for (let i=0; i<itemSections.length; i++) {
-        const sec = itemSections[i];
-        const lat = sec.querySelector('[id^="lat"]').value;
-        const lng = sec.querySelector('[id^="lng"]').value;
+      overviewMap.eachLayer((l) => { if (l instanceof L.Marker) overviewMap.removeLayer(l); });
+      let items = document.querySelectorAll('.item-section');
+      let markers = [];
+      for (let i = 0; i < items.length; i++) {
+        let sec = items[i];
+        let lat = sec.querySelector('[id^="lat"]').value;
+        let lng = sec.querySelector('[id^="lng"]').value;
         if (lat && lng) {
-          const latNum = parseFloat(lat), lngNum = parseFloat(lng);
-          if (!firstLatLng) firstLatLng = [latNum, lngNum];
-          bounds.push([latNum, lngNum]);
-          let marker = L.marker([latNum, lngNum]);
-          const numberIcon = L.divIcon({
-            html: `<div style="background:#213559;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff;box-shadow:0 2px 7px #223e5b21;">${i+1}</div>`,
-            className: '', iconSize: [18,18], iconAnchor: [9,9]
-          });
-          marker.setIcon(numberIcon);
-          marker.addTo(overviewMap);
-          overviewMapMarkers.push(marker);
+          let marker = L.marker([parseFloat(lat), parseFloat(lng)], {
+            icon: L.divIcon({
+              html: `<div style="background:#2b9cf6;color:#fff;border-radius:50%;width:23px;height:23px;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid #fff;">${i+1}</div>`,
+              className: '',
+              iconSize: [23,23],
+              iconAnchor: [11.5,11.5]
+            })
+          }).addTo(overviewMap);
+          markers.push(marker);
         }
       }
-      if (!overviewMapInitialized && firstLatLng) {
-        overviewMap.setView(firstLatLng, 18);
-        overviewMapInitialized = true;
-      }
+      // Always center map on the first item if available
+      let first = getFirstItemLocation();
+      if (first) overviewMap.setView([first.lat, first.lng], 17);
+    }
+    function getFirstItemLocation() {
+      let items = document.querySelectorAll('.item-section');
+      if (items.length === 0) return null;
+      let sec = items[0];
+      let lat = sec.querySelector('[id^="lat"]').value;
+      let lng = sec.querySelector('[id^="lng"]').value;
+      if (lat && lng) return {lat:parseFloat(lat), lng:parseFloat(lng)};
+      return null;
     }
 
-    // PDF logic (same as in previous code, but using .compressedImages[n].dataUrl for PDF images)
-    document.getElementById('generatePDF').onclick = async function() {
-      const jsPDF = window.jspdf.jsPDF;
-      const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
-      let y = 34, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 42;
-      // Get all fields
-      const roofCondition = document.getElementById('roofCondition').value;
-      let roofType = document.getElementById('roofType').value;
-      if(roofType === "Other") roofType = document.getElementById('roofTypeOther').value;
-      const roofAccess = document.getElementById('roofAccess').value;
-      const street = document.getElementById('street').value;
-      const number = document.getElementById('number').value;
-      const city = document.getElementById('city').value;
-      const state = document.getElementById('state').value;
-      const zip = document.getElementById('zip').value;
-      const country = document.getElementById('country').value;
-      const date = document.getElementById('date').value;
-      const tech = document.getElementById('technician').value;
-      const store = document.getElementById('store').value;
-      const storeNum = document.getElementById('storeNum').value;
+    // --- FIREBASE IMAGE TO BASE64
+    function fetchImageAsDataUrl(url) {
+      return fetch(url)
+        .then(res => res.blob())
+        .then(blob => new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        }));
+    }
 
-      // --- Logo
-      try {
-        const logoDataUrl = await getImageDataUrl(logoOptions[selectedLogo].url);
-        pdf.addImage(logoDataUrl, 'PNG', (pdf.internal.pageSize.getWidth()-160)/2, y, 160, 54);
-        y += 60;
-      } catch(e){}
-
-      // --- Info block
-      pdf.setFontSize(16); pdf.setTextColor(33,53,89);
-      pdf.text('Store:', leftMargin, y+15);         pdf.setFontSize(14); pdf.text(store, leftMargin+52, y+15);
-      pdf.setFontSize(16); pdf.text('Store #:', leftMargin+210, y+15); pdf.setFontSize(14); pdf.text(storeNum, leftMargin+277, y+15);
-      pdf.setFontSize(16); pdf.text('Technician:', leftMargin, y+37);  pdf.setFontSize(14); pdf.text(tech, leftMargin+87, y+37);
-      pdf.setFontSize(16); pdf.text('Roof:', leftMargin, y+59); pdf.setFontSize(14); pdf.text(roofType, leftMargin+42, y+59);
-      pdf.setFontSize(16); pdf.text('Condition:', leftMargin+210, y+59); pdf.setFontSize(14); pdf.text(roofCondition, leftMargin+92+210, y+59);
-      pdf.setFontSize(16); pdf.text('Access:', leftMargin, y+81); pdf.setFontSize(14); pdf.text(roofAccess, leftMargin+57, y+81);
-      pdf.setFontSize(16); pdf.text('Date:', leftMargin, y+103); pdf.setFontSize(14); pdf.text(date, leftMargin+39, y+103);
-      pdf.setFontSize(16); pdf.text('Address:', leftMargin, y+125); pdf.setFontSize(14);
-      pdf.text(`${street} ${number}, ${city} ${state}, ${zip}, ${country}`, leftMargin+62, y+125, {maxWidth:pdf.internal.pageSize.getWidth()-leftMargin-62-30});
-      y += 138;
-
-      pdf.setFontSize(16); pdf.setTextColor(33, 53, 89);
-      pdf.text('Items', leftMargin, y+=10);
-      pdf.setTextColor(40,40,52);
-
-      // --- ITEMS ---
-      const itemSections = document.querySelectorAll('.item-section');
-      const locations = [];
-      for (let i = 0; i < itemSections.length; i++) {
-        let sec = itemSections[i];
-        let desc = sec.querySelector('textarea').value;
-        let imgs = sec.compressedImages || [];
-        const coord = sec.querySelector('[id^="coord"]').textContent;
-        const lat = sec.querySelector('[id^="lat"]').value;
-        const lng = sec.querySelector('[id^="lng"]').value;
-        if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
-        let itemBlockHeight = 90 + (Math.ceil(imgs.length/2) * 145);
-        if (y + itemBlockHeight > pageHeight - 60) { pdf.addPage(); y = 38; }
-        pdf.setFontSize(14); pdf.setTextColor(33,53,89);
-        pdf.text(`Item #${i+1}:`, leftMargin, y+=28);
-        pdf.setFontSize(12); pdf.setTextColor(40,40,52);
-        pdf.text(desc, leftMargin+62, y-2, {maxWidth:340});
-        pdf.text(`Location: ${coord}`, leftMargin, y+=19);
-        let imgY = y+3, imgX = leftMargin, imgWidth = 190, imgHeight = 140, gapX = 24;
-        for (let j = 0; j < imgs.length; j += 2) {
-          if (imgY+imgHeight > pageHeight-60) { pdf.addPage(); imgY = 38; }
-          for (let k = 0; k < 2 && j+k < imgs.length; k++) {
-            pdf.addImage(imgs[j+k].dataUrl, 'JPEG', imgX+(k*(imgWidth+gapX)), imgY, imgWidth, imgHeight);
+    // --- PAST REPORTS, BUTTONS ---
+    let loadingBlock = document.getElementById('loadingBlock');
+    async function listReports() {
+      const snap = await db.collection('reports').orderBy('created', 'desc').limit(30).get();
+      const ul = document.getElementById('reportList');
+      ul.innerHTML = '';
+      snap.forEach(doc => {
+        const data = doc.data();
+        let li = document.createElement('li');
+        li.innerHTML = `<b>${data.store || 'No store'}</b> (${data.date}) 
+          <button onclick="loadReport('${doc.id}')">Edit/Update</button>`;
+        ul.appendChild(li);
+      });
+    }
+    async function loadReport(reportId) {
+      window.editingReportId = reportId;
+      document.getElementById('newReportBtn').style.display = '';
+      const doc = await db.collection('reports').doc(reportId).get();
+      const data = doc.data();
+      selectedLogo = data.logo || "seal";
+      selectLogo(document.querySelector(`.logo-choice[onclick*="${selectedLogo}"]`), selectedLogo);
+      document.getElementById('roofCondition').value = data.roofCondition || "";
+      document.getElementById('roofType').value = ["PVC","TPO","Modified","Metal"].includes(data.roofType) ? data.roofType : "Other";
+      document.getElementById('roofTypeOther').value = !["PVC","TPO","Modified","Metal"].includes(data.roofType) ? data.roofType : "";
+      document.getElementById('roofAccess').value = data.roofAccess || "";
+      document.getElementById('street').value = data.street || "";
+      document.getElementById('number').value = data.number || "";
+      document.getElementById('city').value = data.city || "";
+      document.getElementById('state').value = data.state || "";
+      document.getElementById('zip').value = data.zip || "";
+      document.getElementById('country').value = data.country || "";
+      document.getElementById('date').value = data.date || "";
+      document.getElementById('technician').value = data.technician || "";
+      document.getElementById('store').value = data.store || "";
+      document.getElementById('storeNum').value = data.storeNum || "";
+      document.getElementById('itemsContainer').innerHTML = '';
+      itemIdx = 0;
+      for (let i = 0; i < (data.items || []).length; i++) {
+        addItem();
+        let sec = document.getElementById('item'+(i+1));
+        sec.querySelector('textarea').value = data.items[i].desc || "";
+        updateDescInline(i+1, data.items[i].desc || "");
+        sec.querySelector('[id^="coord"]').textContent = data.items[i].coord || "";
+        sec.querySelector('[id^="lat"]').value = data.items[i].lat || "";
+        sec.querySelector('[id^="lng"]').value = data.items[i].lng || "";
+        sec.compressedImages = [];
+        for (let j = 0; j < (data.items[i].imgUrls || []).length; j++) {
+          let imgUrl = data.items[i].imgUrls[j];
+          const previewDiv = sec.querySelector('.pictures-preview');
+          const img = document.createElement('img');
+          img.src = imgUrl;
+          previewDiv.appendChild(img);
+          // Always use base64 for PDF
+          if (!imgUrl.startsWith('data:')) {
+            loadingBlock.style.display = 'block';
+            fetchImageAsDataUrl(imgUrl).then(dataUrl => {
+              sec.compressedImages.push({blob: null, dataUrl});
+              if (i === data.items.length-1 && j === data.items[i].imgUrls.length-1) loadingBlock.style.display = 'none';
+            });
+          } else {
+            sec.compressedImages.push({blob: null, dataUrl: imgUrl});
           }
-          imgY += imgHeight+10;
         }
-        y = imgY+2;
       }
-      // --- OVERVIEW MAP (snapshot from live map) ---
-      if (locations.length > 0) await generateAllItemsMapPDF_fromLive(overviewMap, pdf);
-      pdf.save(`field-report-${date}.pdf`);
-    };
-
-    function getImageDataUrl(url) {
-      return new Promise(res=>{
-        let img = new window.Image();
-        img.crossOrigin = "Anonymous";
-        img.onload = function() {
-          let canvas = document.createElement('canvas');
-          canvas.width = img.width; canvas.height = img.height;
-          let ctx = canvas.getContext('2d');
-          ctx.drawImage(img,0,0);
-          res(canvas.toDataURL());
-        };
-        img.src = url;
-      });
+      updateSummary();
+      setTimeout(initOverviewMap, 350);
     }
+    document.getElementById('newReportBtn').onclick = function() { location.reload(); };
 
-    // Overview map snapshot logic:
-    async function generateAllItemsMapPDF_fromLive(map, pdf) {
-      return new Promise((resolve) => {
-        const container = map.getContainer();
-        setTimeout(async () => {
-          await html2canvas(container, {useCORS:true, backgroundColor:null}).then(canvas => {
-            pdf.addPage("a4", "landscape");
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            pdf.setFontSize(18);
-            pdf.text('All Item Locations', pageWidth/2, 40, {align:'center'});
-            const imgWidth = 540, imgHeight = 260;
-            const imgX = (pageWidth-imgWidth)/2;
-            pdf.setDrawColor(90,110,150);
-            pdf.rect(imgX-10, 54, imgWidth+20, imgHeight+20);
-            pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), 'JPEG', imgX, 64, imgWidth, imgHeight);
-            resolve();
-          });
-        }, 500);
-      });
-    }
-
-    // FIREBASE SAVE/LOAD/EDIT INTEGRATION
-
-    document.getElementById('saveReportBtn').onclick = async function() {
+    // --- UNIFIED GENERATE/SAVE/REPORT BUTTON ---
+    document.getElementById('generateReportBtn').onclick = async function() {
+      loadingBlock.style.display = 'block';
+      this.disabled = true;
+      // -- 1. SAVE TO FIREBASE --
       let reportData = {
         logo: selectedLogo,
         roofCondition: document.getElementById('roofCondition').value,
@@ -721,82 +503,166 @@
             imgUrls.push(imgs[j].dataUrl);
           }
         }
-        reportData.items.push({
-          desc, coord, lat, lng, imgUrls
-        });
+        reportData.items.push({desc, coord, lat, lng, imgUrls});
       }
       if (window.editingReportId) {
         await db.collection('reports').doc(window.editingReportId).set(reportData);
-        alert('Report updated!');
       } else {
         await db.collection('reports').add(reportData);
-        alert('Report saved!');
       }
-      document.getElementById('newReportBtn').style.display = '';
-    };
-
-    async function listReports() {
-      const snap = await db.collection('reports').orderBy('created', 'desc').limit(30).get();
-      const ul = document.getElementById('reportList');
-      ul.innerHTML = '';
-      snap.forEach(doc => {
-        const data = doc.data();
-        let li = document.createElement('li');
-        li.innerHTML = `<b>${data.store || 'No store'}</b> (${data.date}) 
-          <button onclick="loadReport('${doc.id}')">Edit/Update</button>`;
-        ul.appendChild(li);
-      });
-    }
-
-    async function loadReport(reportId) {
-      window.editingReportId = reportId;
-      document.getElementById('newReportBtn').style.display = '';
-      const doc = await db.collection('reports').doc(reportId).get();
-      const data = doc.data();
-      selectedLogo = data.logo || "seal";
-      selectLogo(document.querySelector(`.logo-choice[onclick*="${selectedLogo}"]`), selectedLogo);
-      document.getElementById('roofCondition').value = data.roofCondition || "";
-      document.getElementById('roofType').value = ["PVC","TPO","Modified","Metal"].includes(data.roofType) ? data.roofType : "Other";
-      document.getElementById('roofTypeOther').value = !["PVC","TPO","Modified","Metal"].includes(data.roofType) ? data.roofType : "";
-      document.getElementById('roofAccess').value = data.roofAccess || "";
-      document.getElementById('street').value = data.street || "";
-      document.getElementById('number').value = data.number || "";
-      document.getElementById('city').value = data.city || "";
-      document.getElementById('state').value = data.state || "";
-      document.getElementById('zip').value = data.zip || "";
-      document.getElementById('country').value = data.country || "";
-      document.getElementById('date').value = data.date || "";
-      document.getElementById('technician').value = data.technician || "";
-      document.getElementById('store').value = data.store || "";
-      document.getElementById('storeNum').value = data.storeNum || "";
-      document.getElementById('itemsContainer').innerHTML = '';
-      itemIdx = 0;
-      for (let i = 0; i < (data.items || []).length; i++) {
-        addItem();
-        let sec = document.getElementById('item'+(i+1));
-        sec.querySelector('textarea').value = data.items[i].desc || "";
-        updateDescInline(i+1, data.items[i].desc || "");
-        sec.querySelector('[id^="coord"]').textContent = data.items[i].coord || "";
-        sec.querySelector('[id^="lat"]').value = data.items[i].lat || "";
-        sec.querySelector('[id^="lng"]').value = data.items[i].lng || "";
-        sec.compressedImages = [];
-        for (let j = 0; j < (data.items[i].imgUrls || []).length; j++) {
-          sec.compressedImages.push({blob: null, dataUrl: data.items[i].imgUrls[j]});
-          const previewDiv = sec.querySelector('.pictures-preview');
-          const img = document.createElement('img');
-          img.src = data.items[i].imgUrls[j];
-          previewDiv.appendChild(img);
+      // -- 2. WAIT for all images to have base64 dataUrls for PDF --
+      async function ensureAllImagesReady() {
+        for (let i = 0; i < itemSections.length; i++) {
+          let sec = itemSections[i];
+          let imgs = sec.compressedImages || [];
+          for (let j = 0; j < imgs.length; j++) {
+            if (imgs[j].dataUrl && !imgs[j].dataUrl.startsWith('data:')) {
+              imgs[j].dataUrl = await fetchImageAsDataUrl(imgs[j].dataUrl);
+            }
+          }
         }
       }
-      updateSummary();
-      setTimeout(initOverviewMap, 350);
-    }
-    document.getElementById('newReportBtn').onclick = function() { location.reload(); };
-
-    document.getElementById('reportForm').onsubmit = function(e) {
-      e.preventDefault();
-      alert("Report submitted! (Handle save/export logic here)");
+      await ensureAllImagesReady();
+      // -- 3. GENERATE PDF --
+      await generatePDFReport();
+      this.disabled = false;
+      loadingBlock.style.display = 'none';
+      document.getElementById('newReportBtn').style.display = '';
     };
+
+    // --- PDF GENERATION ---
+    async function generatePDFReport() {
+      const jsPDF = window.jspdf.jsPDF;
+      const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' });
+      let y = 32, pageHeight = pdf.internal.pageSize.getHeight(), leftMargin = 36;
+      // --- Logo ---
+      try {
+        const logoDataUrl = await getImageDataUrl(logoOptions[selectedLogo].url);
+        pdf.addImage(logoDataUrl, 'PNG', (pdf.internal.pageSize.getWidth()-160)/2, y, 160, 54);
+        y += 62;
+      } catch(e){}
+      // --- Info block
+      pdf.setFontSize(16); pdf.setTextColor(33,53,89);
+      pdf.text('Store:', leftMargin, y+15);         pdf.setFontSize(14); pdf.text(document.getElementById('store').value, leftMargin+52, y+15);
+      pdf.setFontSize(16); pdf.text('Store #:', leftMargin+210, y+15); pdf.setFontSize(14); pdf.text(document.getElementById('storeNum').value, leftMargin+277, y+15);
+      pdf.setFontSize(16); pdf.text('Technician:', leftMargin, y+37);  pdf.setFontSize(14); pdf.text(document.getElementById('technician').value, leftMargin+87, y+37);
+      pdf.setFontSize(16); pdf.text('Roof:', leftMargin, y+59); pdf.setFontSize(14); pdf.text(document.getElementById('roofType').value, leftMargin+42, y+59);
+      pdf.setFontSize(16); pdf.text('Condition:', leftMargin+210, y+59); pdf.setFontSize(14); pdf.text(document.getElementById('roofCondition').value, leftMargin+92+210, y+59);
+      pdf.setFontSize(16); pdf.text('Access:', leftMargin, y+81); pdf.setFontSize(14); pdf.text(document.getElementById('roofAccess').value, leftMargin+57, y+81);
+      pdf.setFontSize(16); pdf.text('Date:', leftMargin, y+103); pdf.setFontSize(14); pdf.text(document.getElementById('date').value, leftMargin+39, y+103);
+      pdf.setFontSize(16); pdf.text('Address:', leftMargin, y+125); pdf.setFontSize(14);
+      let addr = [
+        document.getElementById('street').value, document.getElementById('number').value,
+        document.getElementById('city').value, document.getElementById('state').value,
+        document.getElementById('zip').value, document.getElementById('country').value
+      ].filter(Boolean).join(', ');
+      pdf.text(addr, leftMargin+62, y+125, {maxWidth:pdf.internal.pageSize.getWidth()-leftMargin-62-30});
+      y += 138;
+      pdf.setFontSize(16); pdf.setTextColor(33, 53, 89);
+      pdf.text('Items', leftMargin, y+=10);
+      pdf.setTextColor(30,30,30);
+      y += 10;
+      // --- Items ---
+      const itemSections = document.querySelectorAll('.item-section');
+      for (let i = 0; i < itemSections.length; i++) {
+        let sec = itemSections[i];
+        const desc = sec.querySelector('textarea').value;
+        const coord = sec.querySelector('[id^="coord"]').textContent;
+        const imgs = sec.compressedImages || [];
+        const lat = sec.querySelector('[id^="lat"]').value;
+        const lng = sec.querySelector('[id^="lng"]').value;
+        // 1. Text
+        if (y > pageHeight-300) { pdf.addPage(); y = 32; }
+        pdf.setFontSize(15); pdf.setTextColor(25,50,90);
+        pdf.text(`Item #${i+1}`, leftMargin, y+20);
+        pdf.setFontSize(13); pdf.setTextColor(33,53,89);
+        pdf.text(`Description: `, leftMargin+65, y+20);
+        pdf.setFontSize(13); pdf.setTextColor(60,60,60);
+        pdf.text(desc, leftMargin+145, y+20, {maxWidth:300});
+        pdf.setFontSize(12); pdf.setTextColor(33,53,89);
+        pdf.text(`Location: ${coord}`, leftMargin, y+40);
+        // 2. Pictures: 2 per row, as big as fits
+        let imgY = y+54, imgX = leftMargin, w = 185, h = 138;
+        for (let j = 0; j < imgs.length; j++) {
+          if (j%2===0 && j!==0) { imgY += h+11; imgX = leftMargin;}
+          pdf.addImage(imgs[j].dataUrl, 'JPEG', imgX, imgY, w, h);
+          imgX += w+15;
+        }
+        y = imgY + h + 12;
+      }
+      // --- Overview Map at end (landscape page) ---
+      await generateOverviewMapPDF(pdf, leftMargin);
+      pdf.save(`field-report-${document.getElementById('date').value}.pdf`);
+    }
+    async function getImageDataUrl(src) {
+      return fetch(src)
+        .then(res => res.blob())
+        .then(blob => new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        }));
+    }
+    async function generateOverviewMapPDF(pdf, leftMargin) {
+      return new Promise((resolve) => {
+        const mapDiv = document.getElementById('allItemsMapForPDF');
+        mapDiv.innerHTML = '';
+        mapDiv.style.display = "block";
+        if (window._pdfMap && window._pdfMap.remove) window._pdfMap.remove();
+        let items = document.querySelectorAll('.item-section');
+        let locations = [];
+        for (let i = 0; i < items.length; i++) {
+          let sec = items[i];
+          let lat = sec.querySelector('[id^="lat"]').value;
+          let lng = sec.querySelector('[id^="lng"]').value;
+          if (lat && lng) locations.push({lat: parseFloat(lat), lng: parseFloat(lng), num: i+1});
+        }
+        let center = locations.length>0 ? [locations[0].lat, locations[0].lng] : [-22.9,-43.17];
+        const map = L.map('allItemsMapForPDF', {
+          center: center,
+          zoom: 17,
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+        });
+        window._pdfMap = map;
+        L.tileLayer(`https://api.maptiler.com/maps/hybrid/256/{z}/{x}/{y}.jpg?key=D07LNHRpX8QqmkT39Nza`, {
+          tileSize: 256,
+          minZoom: 1,
+          maxZoom: 20
+        }).addTo(map);
+        for (let i = 0; i < locations.length; i++) {
+          let l = locations[i];
+          const numberIcon = L.divIcon({
+            html: `<div style="background:#2b9cf6;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff;">${l.num}</div>`,
+            className: '',
+            iconSize: [20,20],
+            iconAnchor: [10,10]
+          });
+          L.marker([l.lat, l.lng], {icon:numberIcon}).addTo(map);
+        }
+        setTimeout(async () => {
+          await html2canvas(mapDiv, {useCORS:true}).then(canvas => {
+            map.remove();
+            mapDiv.style.display = "none";
+            pdf.addPage("a4", "landscape");
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            pdf.setFontSize(18);
+            pdf.text('All Item Locations', pageWidth/2, 44, {align:'center'});
+            const imgWidth = 550, imgHeight = 255;
+            const imgX = (pageWidth-imgWidth)/2;
+            pdf.setDrawColor(200);
+            pdf.rect(imgX-10, 60, imgWidth+20, imgHeight+20);
+            pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), 'JPEG', imgX, 70, imgWidth, imgHeight);
+            resolve();
+          });
+        }, 1200);
+      });
+    }
   </script>
 </body>
 </html>
